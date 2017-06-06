@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Said</string>
+    <string name="collapsing_bar_scroll_behavior">com.landkid.said.ui.widget.CollapsingBarLayout$CollapsingBarScrollBehavior</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="popular"><![CDATA[Popular Shots]]></string>
+
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CollapsingBarLayout"/>
+
+    <declare-styleable name="OpusILCollapsingBarLayout_Layout">
+        <attr name="layout_orderFlag">
+            <flag name="first" value="0x1"/>
+            <flag name="second" value="0x2"/>
+        </attr>
+    </declare-styleable>
+</resources>
