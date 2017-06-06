@@ -2,6 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:icon="@drawable/ic_menu"
         android:id="@+id/action_filter"
         android:title="Filter"
         app:showAsAction="always"/>
