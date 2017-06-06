@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.support.annotation.StringDef;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -260,10 +262,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         Typekit.getInstance()
-                .addNormal(Typekit.createFromAsset(this, "fonts/RobotoMono-Regular.ttf"))
-                .addBold(Typekit.createFromAsset(this, "fonts/RobotoMono-Bold.ttf"))
-                .addBoldItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-BoldItalic.ttf"))
-                .addItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-Italic.ttf"));
+                .addNormal(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-R.ttf"))
+                .addBold(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-B.ttf"))
+                .addBoldItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-BI.ttf"))
+                .addItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-RI.ttf"));
+//                .addNormal(Typekit.createFromAsset(this, "fonts/RobotoMono-Regular.ttf"))
+//                .addBold(Typekit.createFromAsset(this, "fonts/RobotoMono-Bold.ttf"))
+//                .addBoldItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-BoldItalic.ttf"))
+//                .addItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-Italic.ttf"));
 
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
@@ -297,6 +303,15 @@ public class MainActivity extends AppCompatActivity {
                     outRect.bottom = (int) (150 * getResources().getDisplayMetrics().density);
                 }
                 //super.getItemOffsets(outRect, view, parent, state);
+            }
+        });
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
             }
         });
 

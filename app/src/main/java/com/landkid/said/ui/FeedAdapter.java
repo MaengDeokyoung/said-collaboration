@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -177,6 +178,31 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                 new ShareDribbbleImageTask((Activity) holder.itemView.getContext(), shot).execute();
             }
         });
+
+        holder.liked.setScaleX(0);
+        holder.liked.setScaleY(0);
+        holder.like.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(holder.liked.getScaleY() == 0) {
+                    holder.liked.setPivotX(holder.liked.getWidth() / 2f);
+                    holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
+                    holder.liked.animate()
+                            .scaleX(1)
+                            .scaleY(1)
+                            .setDuration(300)
+                            .start();
+                } else {
+                    holder.liked.setPivotX(holder.liked.getWidth() / 2f);
+                    holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
+                    holder.liked.animate()
+                            .scaleX(0)
+                            .scaleY(0)
+                            .setDuration(300)
+                            .start();
+                }
+            }
+        });
     }
 
     @Override
@@ -191,6 +217,8 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         //@BindView(R.id.iv_profile_photo) ImageView profilePhoto;
         @BindView(R.id.tv_like_count) TextView likeCount;
         //@BindView(R.id.tv_reply_count) TextView replyCount;
+        @BindView(R.id.iv_like) ImageView like;
+        @BindView(R.id.iv_liked) ImageView liked;
         @BindView(R.id.tv_view_count) TextView viewCount;
         @BindView(R.id.ll_user_info_area) View userInfoArea;
         @BindView(R.id.ll_info) LinearLayout info;

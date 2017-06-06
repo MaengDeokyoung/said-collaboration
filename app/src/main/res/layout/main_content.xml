@@ -65,4 +65,12 @@
         android:layout_gravity="center"
         android:layout_margin="30dp" />-->
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        app:srcCompat="@drawable/ic_search_vector" />
+
 </android.support.design.widget.CoordinatorLayout>
