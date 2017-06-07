@@ -21,6 +21,11 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.widget.SearchActivity"
+            android:theme="@style/AppTheme.NoBackground">
+
+        </activity>
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.landkid.fileprovider"

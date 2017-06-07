@@ -1,17 +1,28 @@
 package com.landkid.said.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
+import android.support.v7.graphics.Palette;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -20,13 +31,17 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.bumptech.glide.request.target.Target;
 import com.landkid.said.R;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.util.ResourceUtils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -57,16 +72,24 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
     public void addShots(List<Shot> shots) {
 
+        int previousShotLength = shots.size();
         for (SaidItem shot : shots) {
             this.shots.add((Shot) shot);
         }
-        notifyDataSetChanged();
+        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
     }
 
     @Override
     public void onViewRecycled(FeedViewHolder holder) {
         super.onViewRecycled(holder);
         holder.info.setVisibility(View.GONE);
+
+        holder.mutedDarkSwatch.setBackgroundColor(0x00000000);
+        holder.mutedLightSwatch.setBackgroundColor(0x00000000);
+        holder.mutedSwatch.setBackgroundColor(0x00000000);
+        holder.vibrantDarkSwatch.setBackgroundColor(0x00000000);
+        holder.vibrantLightSwatch.setBackgroundColor(0x00000000);
+        holder.vibrantSwatch.setBackgroundColor(0x00000000);
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
@@ -76,27 +99,132 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         return new FeedViewHolder(view);
     }
 
+
+    void setSwatchColor(View view, int swatch, int order){
+        if(swatch != -1) {
+            view.setBackgroundColor(swatch);
+            view.setVisibility(View.VISIBLE);
+//            view.setScaleX(0);
+//            view.setPivotX(0);
+//            view.animate()
+//                    .scaleX(1)
+//                    .setInterpolator(new AccelerateInterpolator())
+//                    .setStartDelay(order * 100)
+//                    .setDuration(100)
+//                    .start();
+        } else {
+            view.setVisibility(View.GONE);
+        }
+    }
+
+    void setSwatchColor(View view, int swatch){
+        if(swatch != -1) {
+            view.setBackgroundColor(swatch);
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.GONE);
+        }
+    }
+
+
+
+    void setSwatchColor(View view, Palette.Swatch swatch){
+        if(swatch != null) {
+            view.setBackgroundColor(swatch.getRgb());
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.GONE);
+        }
+    }
+
+
     @Override
     public void onBindViewHolder(final FeedViewHolder holder, int position) {
         final Shot shot = shots.get(position);
         holder.username.setText(Html.fromHtml(shot.user.name));
+
+        final Handler colorHandler = new Handler(){
+
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                if(msg.getData().containsKey("colors")) {
+                    int [] colors = msg.getData().getIntArray("colors");
+
+                    setSwatchColor(holder.vibrantSwatch, colors[0], 0);
+
+                    setSwatchColor(holder.vibrantLightSwatch, colors[1], 1);
+
+                    setSwatchColor(holder.vibrantDarkSwatch, colors[2], 2);
+
+                    setSwatchColor(holder.mutedSwatch, colors[3], 3);
+
+                    setSwatchColor(holder.mutedLightSwatch, colors[4], 4);
+
+                    setSwatchColor(holder.mutedDarkSwatch, colors[5], 5);
+
+//                    setSwatchColor(holder.vibrantSwatch, vibrantSwatch);
+//                    setSwatchColor(holder.vibrantLightSwatch, vibrantLightSwatch);
+//                    setSwatchColor(holder.vibrantDarkSwatch, vibrantDarkSwatch);
+//                    setSwatchColor(holder.mutedSwatch, mutedSwatch);
+//                    setSwatchColor(holder.mutedLightSwatch, mutedLightSwatch);
+//                    setSwatchColor(holder.mutedDarkSwatch, mutedDarkSwatch);
+                }
+            }
+        };
+
         Glide.with(holder.itemView.getContext())
                 .load(shot.images.best())
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                .listener(new RequestListener<String, GlideDrawable>() {
-                    @Override
-                    public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
-                        return false;
-                    }
+                .into(new GlideDrawableImageViewTarget(holder.image){
 
                     @Override
-                    public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                        //holder.imageLoadingIndicator.setVisibility(View.GONE);
-                        return false;
+                    public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+                        super.onResourceReady(resource, animation);
+
+
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Bitmap bitmap;
+                                if(!(resource instanceof GifDrawable)) {
+                                    bitmap = ((GlideBitmapDrawable) resource.getCurrent()).getBitmap();
+                                }else {
+                                    GifDrawable gifDrawable = (GifDrawable) resource;
+                                    gifDrawable.stop();
+                                    bitmap = ((GifDrawable) resource).getFirstFrame();
+                                }
+
+                                Palette palette = Palette.from(bitmap).generate();
+//                                    int vibrantSwatch = palette.getVibrantSwatch().getRgb();
+//                                    int vibrantLightSwatch = palette.getLightVibrantSwatch().getRgb();
+//                                    int vibrantDarkSwatch = palette.getDarkVibrantSwatch().getRgb();
+//                                    int mutedSwatch = palette.getMutedSwatch().getRgb();
+//                                    int mutedLightSwatch = palette.getLightMutedSwatch().getRgb();
+//                                    int mutedDarkSwatch = palette.getDarkMutedSwatch().getRgb();
+
+                                int vibrantSwatch = palette.getVibrantColor(-1);
+                                int vibrantLightSwatch = palette.getLightVibrantColor(-1);
+                                int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
+                                int mutedSwatch = palette.getMutedColor(-1);
+                                int mutedLightSwatch = palette.getLightMutedColor(-1);
+                                int mutedDarkSwatch = palette.getDarkMutedColor(-1);
+
+                                int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
+
+                                Message msg = new Message();
+                                Bundle bundle = new Bundle();
+                                bundle.putIntArray("colors", colors);
+                                msg.setData(bundle);
+                                colorHandler.sendMessage(msg);
+
+                            }
+                        }).start();
+
+
                     }
-                })
-                .into(new GlideDrawableImageViewTarget(holder.image));
+                });
 
         /*Glide.with(holder.itemView.getContext())
                 .load(shot.user.avatar_url)
@@ -190,8 +318,26 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                     holder.liked.animate()
                             .scaleX(1)
                             .scaleY(1)
-                            .setDuration(300)
+                            .setDuration(500)
+                            .setInterpolator(new DecelerateInterpolator())
                             .start();
+
+                    holder.likeIcon.animate()
+                            .setListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    holder.likeIcon.animate()
+                                            .translationY(0)
+                                            .setInterpolator(new EaseOutElasticInterpolator())
+                                            .setDuration(1000)
+                                            .start();
+                                }
+                            })
+                            .translationY(ResourceUtils.dpToPx(10, holder.itemView.getContext()))
+                            .setInterpolator(new DecelerateInterpolator())
+                            .setDuration(500)
+                            .start();
+
                 } else {
                     holder.liked.setPivotX(holder.liked.getWidth() / 2f);
                     holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
@@ -228,6 +374,14 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         @BindView(R.id.cv_gif_indicator) FrameLayout gifIndicator;
         @BindView(R.id.pb_loading_image) View imageLoadingIndicator;
         @BindView(R.id.iv_share) ImageView share;
+        @BindView(R.id.fl_like_icon) FrameLayout likeIcon;
+
+        @BindView(R.id.v_muted_dark_swatch) View mutedDarkSwatch;
+        @BindView(R.id.v_muted_light_swatch) View mutedLightSwatch;
+        @BindView(R.id.v_muted_swatch) View mutedSwatch;
+        @BindView(R.id.v_vibrant_dark_swatch) View vibrantDarkSwatch;
+        @BindView(R.id.v_vibrant_light_swatch) View vibrantLightSwatch;
+        @BindView(R.id.v_vibrant_swatch) View vibrantSwatch;
 
         FeedViewHolder(View itemView) {
             super(itemView);
@@ -296,6 +450,41 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                 return "image/gif";
             }
             return "image/jpeg";
+        }
+    }
+
+    class EaseInOutElasticInterpolator implements Interpolator {
+
+        @Override
+        public float getInterpolation(float input) {
+            float t = input * 2;
+            float p = 0.45f;
+            float PI = (float) Math.PI;
+
+            if(t < 1) {
+                float a = (float) Math.pow(2, 10 * (t -= 1));
+                float b = (float) Math.sin((t - p / 4) * ( 2 * PI ) / p);
+                return - a * b / 2;
+            }
+
+            else {
+                float c = (float) Math.pow(2, -10 * (t -= 1));
+                float d = (float) Math.sin((t - p / 4) * ( 2 * PI ) / p);
+                return c * d / 2 + 1 ;
+            }
+        }
+    }
+
+    class EaseOutElasticInterpolator implements Interpolator {
+
+        @Override
+        public float getInterpolation(float input) {
+            float p = 0.3f;
+            float PI = (float) Math.PI;
+            float a = (float) Math.pow(2, -10 * input);
+            float b = (float) Math.sin((input - p / 4) * ( 2 * PI ) / p);
+
+            return a * b + 1;
         }
     }
 }

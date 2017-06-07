@@ -1,11 +1,13 @@
 package com.landkid.said.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Rect;
 import android.support.annotation.StringDef;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -24,6 +26,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.airbnb.lottie.LottieAnimationView;
@@ -32,6 +35,7 @@ import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.ShotDataManager;
 import com.landkid.said.data.api.SearchDataManager;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.ui.widget.SearchActivity;
 import com.landkid.said.util.ResourceUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -56,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.drawer_layout) DrawerLayout drawer;
     @BindView(R.id.et_search) EditText mEtSearch;
     @BindView(R.id.iv_search) ImageView mIvSearch;
-    //@BindView(R.id.pb_loading) ProgressBar mPbLoading;
-    @BindView(R.id.pb_loading) LottieAnimationView mPbLoading;
+    @BindView(R.id.pb_loading) ProgressBar mPbLoading;
+    //@BindView(R.id.pb_loading) LottieAnimationView mPbLoading;
     @BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
 
     @Retention(RetentionPolicy.SOURCE)
@@ -75,7 +79,6 @@ public class MainActivity extends AppCompatActivity {
     SearchDataManager searchDataManager;
 
     InfiniteScrollListener infiniteScrollListener;
-
 
     void resetDataManager(){
         //mFeedAdapter.setShots(new ArrayList<Shot>());
@@ -310,8 +313,10 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
+                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
+                startActivity(intent);
             }
         });
 
