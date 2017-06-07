@@ -14,6 +14,7 @@ import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v7.graphics.Palette;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.util.Log;
@@ -87,6 +88,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
     public void onViewRecycled(FeedViewHolder holder) {
         super.onViewRecycled(holder);
         holder.info.setVisibility(View.GONE);
+        holder.colorPalette.setVisibility(View.GONE);
 
         holder.mutedDarkSwatch.setBackgroundColor(0x00000000);
         holder.mutedLightSwatch.setBackgroundColor(0x00000000);
@@ -156,16 +158,24 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                     int [] colors = msg.getData().getIntArray("colors");
 
                     setSwatchColor(holder.vibrantSwatch, colors[0], 0);
-
                     setSwatchColor(holder.vibrantLightSwatch, colors[1], 1);
-
                     setSwatchColor(holder.vibrantDarkSwatch, colors[2], 2);
-
                     setSwatchColor(holder.mutedSwatch, colors[3], 3);
-
                     setSwatchColor(holder.mutedLightSwatch, colors[4], 4);
-
                     setSwatchColor(holder.mutedDarkSwatch, colors[5], 5);
+                    holder.colorPalette.setVisibility(View.VISIBLE);
+                    holder.colorPalette.setAlpha(0);
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            holder.colorPalette.animate()
+                                    .alpha(1)
+                                    .setInterpolator(new AccelerateInterpolator())
+                                    .setDuration(200)
+                                    .start();
+                        }
+                    }, 100);
+
 
 //                    setSwatchColor(holder.vibrantSwatch, vibrantSwatch);
 //                    setSwatchColor(holder.vibrantLightSwatch, vibrantLightSwatch);
@@ -386,6 +396,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         @BindView(R.id.v_vibrant_dark_swatch) View vibrantDarkSwatch;
         @BindView(R.id.v_vibrant_light_swatch) View vibrantLightSwatch;
         @BindView(R.id.v_vibrant_swatch) View vibrantSwatch;
+        @BindView(R.id.cv_color_palette) CardView colorPalette;
 
         FeedViewHolder(View itemView) {
             super(itemView);
