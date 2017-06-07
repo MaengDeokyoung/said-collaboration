@@ -72,11 +72,15 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
     public void addShots(List<Shot> shots) {
 
-        int previousShotLength = shots.size();
+//        int previousShotLength = shots.size();
+//        for (SaidItem shot : shots) {
+//            this.shots.add((Shot) shot);
+//        }
+//        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
         for (SaidItem shot : shots) {
             this.shots.add((Shot) shot);
         }
-        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
+        notifyDataSetChanged();
     }
 
     @Override
