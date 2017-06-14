@@ -24,6 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -34,6 +35,7 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.ShotDataManager;
 import com.landkid.said.data.api.SearchDataManager;
+import com.landkid.said.data.api.dribbble.DribbblePrefs;
 import com.landkid.said.data.api.model.Shot;
 import com.landkid.said.ui.widget.SearchActivity;
 import com.landkid.said.util.ResourceUtils;
@@ -61,8 +63,9 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.et_search) EditText mEtSearch;
     @BindView(R.id.iv_search) ImageView mIvSearch;
     @BindView(R.id.pb_loading) ProgressBar mPbLoading;
+    @BindView(R.id.bt_login) Button mBtLogin;
     //@BindView(R.id.pb_loading) LottieAnimationView mPbLoading;
-    @BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
+    //@BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
@@ -92,7 +95,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadStarted() {
         BaseDataManager.loadCancel();
-        mFeedAdapter.setShots(new ArrayList<Shot>());
+        Shot shot = new Shot(0,null,null,0,0,null,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,false,null,null,null);
+        shot.isHeaderItem = true;
+        List<Shot> initShots = new ArrayList<>();
+        initShots.add(0, shot);
+        mFeedAdapter.setShots(initShots);
         showProgress(Gravity.CENTER);
     }
 
@@ -102,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
     void onSearchButtonClick(){
         resetDataManager();
         mQuerySearched = mEtSearch.getText().toString();
-        mTvSearchKeyword.setText(Html.fromHtml("Search by <a href=\"\"'>" + mQuerySearched + "</href>"));
+        //mTvSearchKeyword.setText(Html.fromHtml("Search by <a href=\"\"'>" + mQuerySearched + "</href>"));
         searchDataManager = new SearchDataManager(getApplicationContext()) {
             @Override
             public void onDataLoaded(List<Shot> items) {
@@ -193,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                 if(mode != MODE_POPULAR) {
                     resetDataManager();
                     shotDataManager.loadPopular();
-                    mTvSearchKeyword.setText(ResourceUtils.getString(R.string.popular, getApplicationContext()));
+                    //mTvSearchKeyword.setText(ResourceUtils.getString(R.string.popular, getApplicationContext()));
                 }
                 mRvFeeds.smoothScrollToPosition(0);
                 break;
@@ -228,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
-
+        loadStarted();
         shotDataManager.createApi();
         shotDataManager.loadPopular();
 
@@ -279,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
         setActionBarAndDrawer();
 
         LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false);
-        mFeedAdapter = new FeedAdapter();
+        mFeedAdapter = new FeedAdapter(this);
         mRvFeeds.setLayoutManager(llm);
         mRvFeeds.setAdapter(mFeedAdapter);
 
@@ -320,5 +327,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        dribbblePrefs = DribbblePrefs.get(getApplicationContext());
+
+
+        mBtLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent login = new Intent(MainActivity.this, DribbbleLogin.class);
+                startActivity(login);
+            }
+        });
+
     }
+    DribbblePrefs dribbblePrefs;
 }

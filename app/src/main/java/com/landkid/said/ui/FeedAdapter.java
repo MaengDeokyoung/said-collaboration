@@ -3,6 +3,7 @@ package com.landkid.said.ui;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -40,6 +41,8 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.bumptech.glide.request.target.Target;
 import com.landkid.said.R;
+import com.landkid.said.data.api.dribbble.DribbblePrefs;
+import com.landkid.said.data.api.model.Like;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
 import com.landkid.said.util.ResourceUtils;
@@ -53,6 +56,9 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by sds on 2017. 6. 5..
@@ -61,9 +67,11 @@ import butterknife.ButterKnife;
 class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
     List<Shot> shots;
+    DribbblePrefs dribbblePrefs;
 
-    FeedAdapter() {
+    FeedAdapter(Context context) {
         this.shots = new ArrayList<>();
+        this.dribbblePrefs = DribbblePrefs.get(context);
     }
 
     public void setShots(List<Shot> shots){
@@ -85,24 +93,51 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
     }
 
     @Override
-    public void onViewRecycled(FeedViewHolder holder) {
-        super.onViewRecycled(holder);
-        holder.info.setVisibility(View.GONE);
-        holder.colorPalette.setVisibility(View.GONE);
+    public void onViewRecycled(FeedViewHolder feedViewHolder) {
+        super.onViewRecycled(feedViewHolder);
 
-        holder.mutedDarkSwatch.setBackgroundColor(0x00000000);
-        holder.mutedLightSwatch.setBackgroundColor(0x00000000);
-        holder.mutedSwatch.setBackgroundColor(0x00000000);
-        holder.vibrantDarkSwatch.setBackgroundColor(0x00000000);
-        holder.vibrantLightSwatch.setBackgroundColor(0x00000000);
-        holder.vibrantSwatch.setBackgroundColor(0x00000000);
+        if(feedViewHolder instanceof ItemViewHolder) {
+            ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
+            holder.info.setVisibility(View.GONE);
+            holder.colorPalette.setVisibility(View.GONE);
+
+            holder.mutedDarkSwatch.setBackgroundColor(0x00000000);
+            holder.mutedLightSwatch.setBackgroundColor(0x00000000);
+            holder.mutedSwatch.setBackgroundColor(0x00000000);
+            holder.vibrantDarkSwatch.setBackgroundColor(0x00000000);
+            holder.vibrantLightSwatch.setBackgroundColor(0x00000000);
+            holder.vibrantSwatch.setBackgroundColor(0x00000000);
+        }
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
+    }
+
+    static final int TYPE_HEADER = 1;
+    static final int TYPE_ITEM = 0;
+
+    @Override
+    public int getItemViewType(int position) {
+
+        if(shots.get(position).isHeaderItem){
+            return TYPE_HEADER;
+        } else {
+            return TYPE_ITEM;
+        }
+
+        //return super.getItemViewType(position);
     }
 
     @Override
     public FeedViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
-        return new FeedViewHolder(view);
+        View view;
+        switch (viewType){
+            case TYPE_HEADER:
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_header, parent, false);
+                return new HeaderViewHolder(view);
+            default:
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
+                return new ItemViewHolder(view);
+        }
+
     }
 
 
@@ -145,8 +180,17 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
 
     @Override
-    public void onBindViewHolder(final FeedViewHolder holder, int position) {
+    public void onBindViewHolder(FeedViewHolder feedViewHolder, int position) {
         final Shot shot = shots.get(position);
+
+        if(getItemViewType(position) == TYPE_HEADER){
+            HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
+            headerViewHolder.header.setText(shot.headerTitle);
+            return;
+        }
+
+        final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
+
         holder.username.setText(Html.fromHtml(shot.user.name));
 
         final Handler colorHandler = new Handler(){
@@ -206,7 +250,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                                     bitmap = ((GlideBitmapDrawable) resource.getCurrent()).getBitmap();
                                 }else {
                                     GifDrawable gifDrawable = (GifDrawable) resource;
-                                    gifDrawable.stop();
+//                                    gifDrawable.stop();
                                     bitmap = ((GifDrawable) resource).getFirstFrame();
                                 }
 
@@ -323,10 +367,33 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
         holder.liked.setScaleX(0);
         holder.liked.setScaleY(0);
+
+        final Call<Like> likeCall = dribbblePrefs.getApi().checkLiked(shot.id);
+        likeCall.enqueue(new Callback<Like>() {
+            @Override
+            public void onResponse(Call<Like> call, Response<Like> response) {
+                if(response.body() != null){
+                    holder.liked.setScaleX(1);
+                    holder.liked.setScaleY(1);
+                } else {
+                    holder.liked.setScaleX(0);
+                    holder.liked.setScaleY(0);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Like> call, Throwable t) {
+
+            }
+        });
+
+
         holder.like.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 if(holder.liked.getScaleY() == 0) {
+                    doLike(shot, true);
                     holder.liked.setPivotX(holder.liked.getWidth() / 2f);
                     holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
                     holder.liked.animate()
@@ -353,6 +420,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                             .start();
 
                 } else {
+                    doLike(shot, false);
                     holder.liked.setPivotX(holder.liked.getWidth() / 2f);
                     holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
                     holder.liked.animate()
@@ -364,13 +432,66 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
             }
         });
     }
+    boolean performingLike = false;
+
+    void checkLike(Shot shot){
+        final Call<Like> likeCall = dribbblePrefs.getApi().checkLiked(shot.id);
+        likeCall.enqueue(new Callback<Like>() {
+            @Override
+            public void onResponse(Call<Like> call, Response<Like> response) {
+                performingLike = false;
+            }
+
+            @Override
+            public void onFailure(Call<Like> call, Throwable t) {
+                performingLike = false;
+            }
+        });
+    }
+
+    void doLike(Shot shot, boolean liked) {
+        performingLike = true;
+        if (liked) {
+            final Call<Like> likeCall = dribbblePrefs.getApi().like(shot.id);
+            likeCall.enqueue(new Callback<Like>() {
+                @Override
+                public void onResponse(Call<Like> call, Response<Like> response) {
+                    performingLike = false;
+                }
+
+                @Override
+                public void onFailure(Call<Like> call, Throwable t) {
+                    performingLike = false;
+                }
+            });
+        } else {
+            final Call<Void> unlikeCall = dribbblePrefs.getApi().unlike(shot.id);
+            unlikeCall.enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    performingLike = false;
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    performingLike = false;
+                }
+            });
+        }
+    }
 
     @Override
     public int getItemCount() {
         return shots.size();
     }
 
-    static class FeedViewHolder extends RecyclerView.ViewHolder {
+    static abstract class FeedViewHolder extends RecyclerView.ViewHolder{
+        FeedViewHolder(View itemView){
+            super(itemView);
+        }
+    }
+
+    static class ItemViewHolder extends FeedViewHolder {
 
         @BindView(R.id.tv_username) TextView username;
         @BindView(R.id.iv_image) ImageView image;
@@ -398,7 +519,17 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         @BindView(R.id.v_vibrant_swatch) View vibrantSwatch;
         @BindView(R.id.cv_color_palette) CardView colorPalette;
 
-        FeedViewHolder(View itemView) {
+        ItemViewHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
+        }
+    }
+
+    static class HeaderViewHolder extends FeedViewHolder {
+
+        @BindView(R.id.tv_header) TextView header;
+
+        HeaderViewHolder(View itemView){
             super(itemView);
             ButterKnife.bind(this, itemView);
         }

@@ -18,6 +18,7 @@ package com.landkid.said.data.api.dribbble;
 
 import android.support.annotation.StringDef;
 
+import com.landkid.said.data.api.model.Like;
 import com.landkid.said.data.api.model.Shot;
 
 import java.lang.annotation.Retention;
@@ -49,4 +50,12 @@ public interface DribbbleService {
     Call<List<Shot>> getPopular(@Query("page") Integer page,
                                 @Query("per_page") Integer pageSize);
 
+    @GET("v1/shots/{id}/like")
+    Call<Like> checkLiked(@Path("id") long shotId);
+
+    @POST("v1/shots/{id}/like")
+    Call<Like> like(@Path("id") long shotId);
+
+    @DELETE("v1/shots/{id}/like")
+    Call<Void> unlike(@Path("id") long shotId);
 }

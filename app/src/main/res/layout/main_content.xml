@@ -26,31 +26,13 @@
 
         </FrameLayout>
 
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingLeft="18dp"
-            app:layout_orderFlag="second">
-
-            <TextView
-                android:paddingTop="10dp"
-                android:id="@+id/tv_search_keyword"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="@string/popular"
-                android:textColor="#292c44"
-                android:textSize="34sp" />
-
-        </FrameLayout>
-
     </com.landkid.said.ui.widget.CollapsingBarLayout>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
         app:layout_behavior="@string/collapsing_bar_scroll_behavior" />
 
 

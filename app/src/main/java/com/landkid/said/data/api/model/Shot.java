@@ -29,6 +29,9 @@ import java.util.List;
  */
 public class Shot extends SaidItem implements Parcelable {
 
+    public boolean isHeaderItem = false;
+    public String headerTitle = "Popular Shots";
+
     public final String description;
     public final long width;
     public final long height;
