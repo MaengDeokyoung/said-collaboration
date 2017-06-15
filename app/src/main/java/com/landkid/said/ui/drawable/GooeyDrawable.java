@@ -62,6 +62,9 @@ public class GooeyDrawable extends Drawable implements Animatable {
     static final int DEFAULT_VIEWPORT_X = 220;
     static final int DEFAULT_VIEWPORT_Y = 100;
 
+    int mParentCircleRadius;
+    int mChildCircleRadius;
+
     class Viewport {
         int x;
         int y;
@@ -89,8 +92,10 @@ public class GooeyDrawable extends Drawable implements Animatable {
         mContext = context;
         mInterpolator = new DecelerateInterpolator();
         mColor = color;
-        mDuration = 5000;
-        mPadding = 50;
+        mDuration = 500;
+        mPadding = 20;
+        mParentCircleRadius = 50;
+        mChildCircleRadius = 40;
         viewport = new Viewport(DEFAULT_VIEWPORT_X, DEFAULT_VIEWPORT_Y);
     }
 
@@ -133,99 +138,9 @@ public class GooeyDrawable extends Drawable implements Animatable {
         }
     }
 
-    int sizeWithFraction(int size){
-
-        return fraction * size;
-    };
-
-    float sizeWithFraction(float size){
-
-        return fraction * size;
-    };
-
-    double getSinOffset(){
-        return Math.sin((Math.PI * 2 / 5) * mProgressAnim / (mTotalProgress));
-    }
-
-    double getCosOffset(){
-        return Math.cos((Math.PI * 2 / 5) * mProgressAnim / (mTotalProgress));
-    }
-
-    double getTanOffset(){
-        return Math.tan((Math.PI * 2 / 5) * mProgressAnim / (mTotalProgress));
-    }
-
-
-    float getCircleCenterOffset(){
-        return 50 + mProgressAnim * 2 / 10.0f + mPadding;
-    }
-
-    float getTopLeftX(){
-        return sizeWithFraction((float) (50 * (1 + getSinOffset())));
-    }
-
-    float getTopLeftY(){
-        return sizeWithFraction((float) (50 * (1 - getCosOffset())));
-    }
-
-    float getTopCenterX(){
-
-        return (getTopLeftX() + getTopRightX()) / 2;
-    }
-
-    float getTopCenterY(){
-
-        return (float) (((getTopRightX() - getTopLeftX()) / 2) * getTanOffset() + getTopLeftY());
-    }
-
-    float getTopRightX(){
-        return sizeWithFraction((float) (getCircleCenterOffset() - 50 * getSinOffset()));
-    }
-
-    float getTopRightY(){
-        return sizeWithFraction((float) (50 * (1 - getCosOffset())));
-    }
-
-
-    float getBottomLeftX(){
-        return sizeWithFraction((float) (50 * (1 + getSinOffset())));
-    }
-
-    float getBottomLeftY(){
-        return sizeWithFraction(100) - getTopLeftY();
-    }
-
-    float getBottomCenterX(){
-
-        return (getBottomLeftX() + getBottomRightX()) / 2;
-    }
-
-    float getBottomCenterY(){
-
-        return sizeWithFraction(100) - getTopCenterY();
-    }
-
-    float getBottomRightX(){
-        return sizeWithFraction((float) (getCircleCenterOffset() - 50 * getSinOffset()));
-    }
-
-    float getBottomRightY(){
-        return sizeWithFraction(100) - getTopRightY();
-    }
-
-//    float getBottomLeftX(){
-//        return ;
-//    }
-
-//    float getBottomRightX(){
-//        return ;
-//    }
-
-
-
     void drawGooeyEffect(Path path, Canvas canvas){
-        path.addCircle(sizeWithFraction(50), sizeWithFraction(50), sizeWithFraction(50), Path.Direction.CW);
-        path.addCircle(sizeWithFraction((int) getCircleCenterOffset()), sizeWithFraction(50), sizeWithFraction(50), Path.Direction.CW);
+        path.addCircle(sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius), Path.Direction.CW);
+        path.addCircle(sizeWithFraction((int) getCircleCenterOffset()), sizeWithFraction(mParentCircleRadius), sizeWithFraction(mChildCircleRadius), Path.Direction.CW);
 
         path.moveTo(
                 getTopLeftX(),
@@ -261,22 +176,30 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
     void drawSeparationEffect(Path path, Canvas canvas){
 
-        path.addCircle(sizeWithFraction(50), sizeWithFraction(50), sizeWithFraction(50), Path.Direction.CW);
-        path.addCircle(sizeWithFraction(150 + mPadding), sizeWithFraction(50), sizeWithFraction(50), Path.Direction.CW);
+        path.addCircle(
+                sizeWithFraction(mParentCircleRadius),
+                sizeWithFraction(mParentCircleRadius),
+                sizeWithFraction(mParentCircleRadius),
+                Path.Direction.CW);
+        path.addCircle(
+                sizeWithFraction(mParentCircleRadius * 2 + mChildCircleRadius + mPadding),
+                sizeWithFraction(mParentCircleRadius),
+                sizeWithFraction(mChildCircleRadius),
+                Path.Direction.CW);
 
         Path ovalPath = new Path();
         ovalPath.addArc(
                 sizeWithFraction(- mPadding / 2 + (int) (mProgressAnim * mPadding / mTotalProgress)),
                 0,
-                sizeWithFraction(100 + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
-                sizeWithFraction(100),
+                sizeWithFraction(mParentCircleRadius * 2 + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
+                sizeWithFraction(mParentCircleRadius * 2),
                 -90,
                 180);
         ovalPath.addArc(
-                sizeWithFraction(100 + mPadding / 2 + (int) (mProgressAnim * mPadding / mTotalProgress)),
-                0,
-                sizeWithFraction(200 + mPadding + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
-                sizeWithFraction(100),
+                sizeWithFraction(mParentCircleRadius * 2 + mPadding / 2 + (int) (mProgressAnim * mPadding / mTotalProgress)),
+                sizeWithFraction(getDifferC1AndC2()),
+                sizeWithFraction(mParentCircleRadius * 2 + mChildCircleRadius * 2 + mPadding + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
+                sizeWithFraction(mParentCircleRadius * 2 - getDifferC1AndC2()),
                 90,
                 180);
 
@@ -380,6 +303,90 @@ public class GooeyDrawable extends Drawable implements Animatable {
     @Override
     public boolean isRunning() {
         return mRunState != RUN_STATE_STOPPED;
+    }
+
+    int getDifferC1AndC2(){
+        return mParentCircleRadius - mChildCircleRadius;
+    }
+
+    int sizeWithFraction(int size){
+
+        return fraction * size;
+    };
+
+    float sizeWithFraction(float size){
+
+        return fraction * size;
+    };
+
+    double getSinOffset(){
+        return Math.sin((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
+    }
+
+    double getCosOffset(){
+        return Math.cos((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
+    }
+
+    double getTanOffset(){
+        return Math.tan((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
+    }
+
+
+    float getCircleCenterOffset(){
+        return mParentCircleRadius + mProgressAnim * 2 / 10.0f + mPadding;
+    }
+
+    float getTopLeftX(){
+        return sizeWithFraction((float) (mParentCircleRadius * (1 + getSinOffset())));
+    }
+
+    float getTopLeftY(){
+        return sizeWithFraction((float) (mParentCircleRadius * (1 - getCosOffset())));
+    }
+
+    float getTopCenterX(){
+
+        return (getTopLeftX() + getTopRightX()) * 0.5f;
+    }
+
+    float getTopCenterY(){
+
+        return (float) (((getTopRightX() - getTopLeftX()) / 2) * getTanOffset() + getTopLeftY());
+    }
+
+    float getTopRightX(){
+        return sizeWithFraction((float) (getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
+    }
+
+    float getTopRightY(){
+        return sizeWithFraction((float) (mChildCircleRadius * (1 - getCosOffset())) + getDifferC1AndC2());
+    }
+
+
+    float getBottomLeftX(){
+        return sizeWithFraction((float) (mParentCircleRadius * (1 + getSinOffset())));
+    }
+
+    float getBottomLeftY(){
+        return sizeWithFraction(mParentCircleRadius * 2) - getTopLeftY();
+    }
+
+    float getBottomCenterX(){
+
+        return getTopCenterX();
+    }
+
+    float getBottomCenterY(){
+
+        return sizeWithFraction(mParentCircleRadius * 2) - getTopCenterY();
+    }
+
+    float getBottomRightX(){
+        return sizeWithFraction((float) (getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
+    }
+
+    float getBottomRightY(){
+        return sizeWithFraction(mParentCircleRadius * 2) - getTopRightY();
     }
 
 }
