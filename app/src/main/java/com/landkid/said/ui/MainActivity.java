@@ -3,6 +3,7 @@ package com.landkid.said.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.graphics.drawable.Animatable;
 import android.support.annotation.StringDef;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -13,6 +14,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -22,6 +24,8 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -37,8 +41,10 @@ import com.landkid.said.data.api.ShotDataManager;
 import com.landkid.said.data.api.SearchDataManager;
 import com.landkid.said.data.api.dribbble.DribbblePrefs;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.ui.drawable.GooeyDrawable;
 import com.landkid.said.ui.widget.SearchActivity;
 import com.landkid.said.util.ResourceUtils;
+import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
 
@@ -64,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.iv_search) ImageView mIvSearch;
     @BindView(R.id.pb_loading) ProgressBar mPbLoading;
     @BindView(R.id.bt_login) Button mBtLogin;
-    //@BindView(R.id.pb_loading) LottieAnimationView mPbLoading;
+    //@BindView(R.id.pb_loading) LottieAnimationView mPxbLoading;
     //@BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
 
     @Retention(RetentionPolicy.SOURCE)
@@ -316,14 +322,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        CardView fab = (CardView) findViewById(R.id.fab1);
+        final CardView fab2 = (CardView) findViewById(R.id.fab2);
+        ImageView fabBackground = (ImageView) findViewById(R.id.gooey_background);
+
+        fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext()));
+        final GooeyDrawable animatable = (GooeyDrawable) fabBackground.getDrawable();
+        animatable.stop();
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
-                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
-                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
-                startActivity(intent);
+                animatable.start();
+                fab2.setTranslationY(0);
+                fab2.animate()
+                        .translationY(- 110 * animatable.getFraction())
+                        .setInterpolator(new AccelerateInterpolator())
+                        .setDuration(animatable.getDuration() / 2)
+                        .start();
+
+//                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+//                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
+//                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
+//                startActivity(intent);
             }
         });
 

@@ -16,6 +16,9 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 
+import com.landkid.said.R;
+import com.landkid.said.util.ResourceUtils;
+
 /**
  * Created by SDS on 2017-04-24.
  */
@@ -40,20 +43,11 @@ public class GooeyDrawable extends Drawable implements Animatable {
     private int mStrokePx = 0;
     private int mPadding;
 
-    private int mFirstMoveX;
-    private int mFirstMoveY;
-
-    private int mSecondMoveX;
-    private int mSecondMoveY;
-
     private Interpolator mInterpolator;
 
     private int mColor;
     private Paint mPaint;
 
-    private long mLastUpdateTime;
-    private int strokeWidth = 5;
-    private int circleRadius;
     private int mHeight;
     private int mWidth;
     private float mTotalProgress = 1000.0f;
@@ -75,7 +69,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
         }
     }
 
-    private int fraction;
+    private float fraction;
 
     @Override
     public void setBounds(int left, int top, int right, int bottom) {
@@ -83,7 +77,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
         mWidth = right - left;
         mHeight = bottom - top;
 
-        fraction = mWidth / 220;
+        fraction = mWidth / 100.0f;
 
         super.setBounds(left, top, right, bottom);
     }
@@ -99,6 +93,14 @@ public class GooeyDrawable extends Drawable implements Animatable {
         viewport = new Viewport(DEFAULT_VIEWPORT_X, DEFAULT_VIEWPORT_Y);
     }
 
+    public float getFraction() {
+        return fraction;
+    }
+
+    public int getDuration() {
+        return mDuration;
+    }
+
     Interpolator getInterpolator(){
         return mInterpolator;
     }
@@ -108,7 +110,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
     }
 
     public GooeyDrawable(Context context) {
-        this(context, 0xFF0e82f3);
+        this(context, ResourceUtils.getColor(R.color.colorAccent, context));
     }
 
     @Override
@@ -119,7 +121,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
         mPaint.setAntiAlias(true);
 
         Path path = new Path();
-        path.moveTo(dpToPx(50, mContext), dpToPx(50, mContext));
+        //path.moveTo(dpToPx(50, mContext), dpToPx(50, mContext));
 
         switch (mRunState){
             case RUN_STATE_STARTING:
@@ -134,6 +136,9 @@ public class GooeyDrawable extends Drawable implements Animatable {
                 mProgressAnim2 = mTotalProgress / 2;
                 draw(path, canvas, 0);
                 mRunState = RUN_STATE_STOPPED;
+                break;
+            default:
+                draw(path, canvas, 0);
                 break;
         }
     }
@@ -168,9 +173,10 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
 
         Path ovalPath = new Path();
-
+        canvas.save();
+        canvas.rotate(-90, sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius));
+        canvas.translate(sizeWithFraction(-120), 0);
         canvas.drawPath(ovalPath, mPaint);
-
         canvas.drawPath(path, mPaint);
     }
 
@@ -203,6 +209,9 @@ public class GooeyDrawable extends Drawable implements Animatable {
                 90,
                 180);
 
+        canvas.save();
+        canvas.rotate(-90, sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius));
+        canvas.translate(sizeWithFraction(-120), 0);
         canvas.drawPath(ovalPath, mPaint);
         canvas.drawPath(path, mPaint);
     }
@@ -214,6 +223,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
         } else {
             drawSeparationEffect(path, canvas);
         }
+
     }
 
 
@@ -248,8 +258,6 @@ public class GooeyDrawable extends Drawable implements Animatable {
     float interpolatedFraction;
 
     private void update() {
-        long curTime = SystemClock.uptimeMillis();
-        mLastUpdateTime = curTime;
         mFrame += 1;
         interpolatedFraction = mFrame / ((mDuration / 2) / (FRAME_DURATION * 1.0f));
 
@@ -309,11 +317,6 @@ public class GooeyDrawable extends Drawable implements Animatable {
         return mParentCircleRadius - mChildCircleRadius;
     }
 
-    int sizeWithFraction(int size){
-
-        return fraction * size;
-    };
-
     float sizeWithFraction(float size){
 
         return fraction * size;
@@ -333,7 +336,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
 
     float getCircleCenterOffset(){
-        return mParentCircleRadius + mProgressAnim * 2 / 10.0f + mPadding;
+        return mParentCircleRadius + mProgressAnim * 2 / 10.0f + mPadding * mProgressAnim * 2 / mTotalProgress;
     }
 
     float getTopLeftX(){
