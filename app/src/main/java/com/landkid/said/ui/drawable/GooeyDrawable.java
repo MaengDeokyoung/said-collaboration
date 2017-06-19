@@ -28,6 +28,8 @@ public class GooeyDrawable extends Drawable implements Animatable {
     private static final String TAG = "CircleDrawable";
     private final Context mContext;
 
+    private boolean reverse = false;
+
     private int mDuration;
 
     private int mRunState = RUN_STATE_STOPPED;
@@ -258,17 +260,22 @@ public class GooeyDrawable extends Drawable implements Animatable {
     float interpolatedFraction;
 
     private void update() {
-        mFrame += 1;
+        if(!reverse) {
+            mFrame += 1;
+        } else {
+            mFrame -= 1;
+        }
+
         interpolatedFraction = mFrame / ((mDuration / 2) / (FRAME_DURATION * 1.0f));
 
-        if(interpolatedFraction <= 1) {
-            mProgressAnim = (int)((mTotalProgress) * new AccelerateInterpolator().getInterpolation(interpolatedFraction)) / 2.0f;
-            if(isRunning())
+        if (0 < interpolatedFraction && interpolatedFraction <= 1) {
+            mProgressAnim = (int) ((mTotalProgress) * new AccelerateInterpolator().getInterpolation(interpolatedFraction)) / 2.0f;
+            if (isRunning())
                 scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
             invalidateSelf();
-        } else if(interpolatedFraction < 2) {
-            mProgressAnim = (int)((mTotalProgress) * new DecelerateInterpolator().getInterpolation(interpolatedFraction - 1)) / 2.0f;
-            if(isRunning())
+        } else if (1 < interpolatedFraction && interpolatedFraction < 2) {
+            mProgressAnim = (int) ((mTotalProgress) * new DecelerateInterpolator().getInterpolation(interpolatedFraction - 1)) / 2.0f;
+            if (isRunning())
                 scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
             invalidateSelf();
         } else {
@@ -277,15 +284,31 @@ public class GooeyDrawable extends Drawable implements Animatable {
     }
 
     private void resetAnimation() {
-        mFrame = 0;
+        if(!reverse){
+            mFrame = 0;
+        } else {
+            mFrame = (int) ((mDuration) / (FRAME_DURATION * 1.0f));
+        }
+
         mProgressAnim = 0;
-        mProgressAnim2 = 0;
+    }
+
+    public void reverse() {
+        if (isRunning())
+            return;
+        reverse = true;
+        mRunState = RUN_STATE_STARTING;
+        resetAnimation();
+        scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
+        invalidateSelf();
+
     }
 
     @Override
     public void start() {
         if (isRunning())
             return;
+        reverse = false;
         mRunState = RUN_STATE_STARTING;
         resetAnimation();
         scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
@@ -298,9 +321,9 @@ public class GooeyDrawable extends Drawable implements Animatable {
         if (!isRunning())
             return;
         resetAnimation();
-        mRunState = RUN_STATE_STOPPING;
+        mRunState = RUN_STATE_STOPPED;
         unscheduleSelf(mUpdater);
-        invalidateSelf();
+        //invalidateSelf();
     }
 
     @Override

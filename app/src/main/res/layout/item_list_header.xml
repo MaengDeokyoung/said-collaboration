@@ -11,7 +11,8 @@
         android:layout_gravity="center_vertical"
         android:paddingTop="10dp"
         android:text="@string/popular"
-        android:textColor="#292c44"
-        android:textSize="34sp" />
+        android:textColor="@color/dark_gray"
+        android:textSize="34sp"
+        android:textStyle="bold"/>
 
 </FrameLayout>

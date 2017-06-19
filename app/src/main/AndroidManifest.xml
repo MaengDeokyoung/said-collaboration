@@ -22,6 +22,9 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.SubActivity">
+        </activity>
+
         <activity
             android:name=".ui.DribbbleLogin"
             android:exported="true"

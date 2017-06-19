@@ -331,15 +331,32 @@ public class MainActivity extends AppCompatActivity {
         animatable.stop();
 
         fab.setOnClickListener(new View.OnClickListener() {
+
+            boolean enabled = false;
+
             @Override
             public void onClick(View view) {
-                animatable.start();
-                fab2.setTranslationY(0);
-                fab2.animate()
-                        .translationY(- 110 * animatable.getFraction())
-                        .setInterpolator(new AccelerateInterpolator())
-                        .setDuration(animatable.getDuration() / 2)
-                        .start();
+                if(!enabled) {
+                    animatable.start();
+                    fab2.setTranslationY(0);
+                    fab2.animate()
+                            .translationY(-110 * animatable.getFraction())
+                            .setStartDelay(0)
+                            .setInterpolator(new AccelerateInterpolator())
+                            .setDuration(animatable.getDuration() / 2)
+                            .start();
+                } else {
+
+                    animatable.reverse();
+                    fab2.setTranslationY(-110 * animatable.getFraction());
+                    fab2.animate()
+                            .translationY(0)
+                            .setInterpolator(new DecelerateInterpolator())
+                            .setStartDelay(animatable.getDuration() / 2)
+                            .setDuration(animatable.getDuration() / 2)
+                            .start();
+                }
+                enabled = !enabled;
 
 //                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
 //                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
