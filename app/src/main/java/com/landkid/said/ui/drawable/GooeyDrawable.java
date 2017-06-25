@@ -134,11 +134,12 @@ public class GooeyDrawable extends Drawable implements Animatable {
                 break;
 
             case RUN_STATE_STOPPING:
+            case RUN_STATE_STOPPED:
                 mProgressAnim = mTotalProgress / 2;
-                mProgressAnim2 = mTotalProgress / 2;
                 draw(path, canvas, 0);
                 mRunState = RUN_STATE_STOPPED;
                 break;
+
             default:
                 draw(path, canvas, 0);
                 break;
@@ -254,8 +255,6 @@ public class GooeyDrawable extends Drawable implements Animatable {
     };
 
     long startTime = 0;
-
-    float mProgressAnim2;
 
     float interpolatedFraction;
 
