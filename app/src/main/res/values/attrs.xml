@@ -8,4 +8,13 @@
             <flag name="second" value="0x2"/>
         </attr>
     </declare-styleable>
+
+    <declare-styleable name="GooeyFloatingActionButton">
+        <attr name="parentButtonRadius" format="reference|dimension"/>
+        <attr name="parentDrawable" format="reference"/>
+        <attr name="childButtonRadius" format="reference|dimension"/>
+        <attr name="childDrawable" format="reference"/>
+        <attr name="childMenu" format="reference"/>
+        <attr name="offset" format="reference|dimension"/>
+    </declare-styleable>
 </resources>

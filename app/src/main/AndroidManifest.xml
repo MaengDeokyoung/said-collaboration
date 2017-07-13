@@ -39,7 +39,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.widget.SearchActivity"
+        <activity android:name=".ui.SearchActivity"
             android:theme="@style/AppTheme.NoBackground">
 
         </activity>

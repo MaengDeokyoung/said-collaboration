@@ -1,4 +1,4 @@
-package com.landkid.said.ui.widget;
+package com.landkid.said.ui;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

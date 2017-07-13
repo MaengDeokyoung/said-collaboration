@@ -1,24 +1,22 @@
 package com.landkid.said.ui.widget;
 
-import android.content.ComponentName;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.StringRes;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.PopupMenu;
 import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.SubMenu;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -40,15 +38,11 @@ public class GooeyFloatingActionButton extends FrameLayout {
             offset;
 
     private CardView mParentButton;
-    private CardView mChildButton;
-    private ImageView mGooeyBackground;
     private CardView [] mChildButtons;
     private ImageView [] mGooeyBackgrounds;
 
     private int childCount;
     private Drawable[] childDrawable;
-
-    GooeyDrawable gooeyDrawable;
 
     public GooeyFloatingActionButton(Context context) {
         this(context, null, 0);
@@ -56,7 +50,6 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
     public GooeyFloatingActionButton(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
-
     }
 
     public GooeyFloatingActionButton(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -78,19 +71,16 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
     void initView(Context context, AttributeSet attrs, int defStyleAttr){
 
-        //setLayoutParams(new LayoutParams(parentCircleRadius * 2, (parentCircleRadius + childCircleRadius) * 2 + offset));
-
         MenuInflater menuInflater = new MenuInflater(getContext());
         PopupMenu p  = new PopupMenu(getContext(), null);
         Menu menu = p.getMenu();
         menuInflater.inflate(childMenuResId, menu);
 
-        childDrawable = new Drawable[menu.size()];
+        childCount = menu.size();
 
-        for(int i = 0 ; i < menu.size() ; i++){
-            MenuItem menuItem = menu.getItem(i);
-            childDrawable[i] = menuItem.getIcon();
-        }
+        childDrawable = new Drawable[childCount];
+        mGooeyBackgrounds = new ImageView[childCount];
+        mChildButtons = new CardView[childCount];
 
         mParentButton = new CardView(context);
         LayoutParams parentLp = new LayoutParams(parentCircleRadius * 2, parentCircleRadius * 2);
@@ -107,42 +97,82 @@ public class GooeyFloatingActionButton extends FrameLayout {
         parentIcon.setImageResource(parentDrawableResId);
 
         mParentButton.addView(parentIcon);
+        for(int i = 0 ; i < menu.size() ; i++) {
 
-        mGooeyBackground = new ImageView(getContext());
-        mGooeyBackground.setLayoutParams(new LayoutParams(parentCircleRadius * 2, (int) ((parentCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext()))));
-        mGooeyBackground.setImageDrawable(new GooeyDrawable(getContext(),
-                parentCircleRadius * 2,
-                (int) ((parentCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext())),
-                ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()),
-                new DecelerateInterpolator(),
-                500,
-                parentCircleRadius,
-                childCircleRadius,
-                offset));
+            ImageView gooeyBackground = new ImageView(getContext());
+            LayoutParams gooeyLp;
+            if (i == 0) {
+                gooeyLp = new LayoutParams(parentCircleRadius * 2,
+                        (int) ((parentCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext())));
+                gooeyLp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                gooeyBackground.setLayoutParams(gooeyLp);
+                gooeyBackground.setImageDrawable(new GooeyDrawable(getContext(),
+                        parentCircleRadius * 2,
+                        (int) ((parentCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext())),
+                        ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()),
+                        new DecelerateInterpolator(),
+                        300,
+                        parentCircleRadius,
+                        childCircleRadius,
+                        offset));
+            } else {
+                gooeyLp = new LayoutParams(childCircleRadius * 2,
+                        (int) ((childCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext())));
+                gooeyLp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                gooeyLp.bottomMargin = parentCircleRadius - childCircleRadius;
+                gooeyBackground.setLayoutParams(gooeyLp);
+                gooeyBackground.setImageDrawable(new GooeyDrawable(getContext(),
+                        childCircleRadius * 2,
+                        (int) ((childCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext())),
+                        ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()),
+                        new DecelerateInterpolator(),
+                        300,
+                        childCircleRadius,
+                        childCircleRadius,
+                        offset));
 
-        addView(mGooeyBackground);
+                if(i == 1){
+                    GooeyDrawable postGooeyDrawable = (GooeyDrawable) gooeyBackground.getDrawable();
+                    postGooeyDrawable.setGooeyed(true);
+                }
+            }
 
-        mChildButton = new CardView(context);
-        LayoutParams childLp = new LayoutParams(childCircleRadius * 2, childCircleRadius * 2);
-        childLp.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
-        childLp.bottomMargin = parentCircleRadius - childCircleRadius;
-        mChildButton.setLayoutParams(childLp);
-        mChildButton.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()));
-        mChildButton.setRadius(childCircleRadius);
-        mChildButton.setCardElevation(0);
+            mGooeyBackgrounds[i] = gooeyBackground;
+        }
 
-        ImageView childIcon = new ImageView(context);
-        CardView.LayoutParams childIconLP = new CardView.LayoutParams((int) (childCircleRadius * 2 * 7 / 16.0f), (int) (childCircleRadius * 2 * 7 / 16.0f));
-        childIconLP.gravity = Gravity.CENTER;
-        childIcon.setLayoutParams(childIconLP);
-        childIcon.setImageResource(childDrawableResId);
+        for(int i = 0 ; i < menu.size() ; i++){
+            MenuItem menuItem = menu.getItem(i);
+            childDrawable[i] = menuItem.getIcon();
 
-        mChildButton.addView(childIcon);
+            CardView childButton = new CardView(context);
+            LayoutParams childLp = new LayoutParams(childCircleRadius * 2, childCircleRadius * 2);
+            childLp.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
+            childLp.bottomMargin = parentCircleRadius - childCircleRadius;
+            childButton.setLayoutParams(childLp);
+            childButton.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()));
+            childButton.setRadius(childCircleRadius);
+            childButton.setCardElevation(0);
 
-        addView(mChildButton);
+            ImageView childIcon = new ImageView(context);
+            CardView.LayoutParams childIconLP = new CardView.LayoutParams((int) (childCircleRadius * 2 * 7 / 16.0f), (int) (childCircleRadius * 2 * 7 / 16.0f));
+            childIconLP.gravity = Gravity.CENTER;
+            childIcon.setLayoutParams(childIconLP);
+            childIcon.setImageDrawable(childDrawable[i]);
 
-        gooeyDrawable = (GooeyDrawable) mGooeyBackground.getDrawable();
+            childButton.addView(childIcon);
 
+
+            mChildButtons[i] = childButton;
+            //mChildButtons[i].setVisibility(INVISIBLE);
+            //gooeyDrawable = (GooeyDrawable) gooeyBackground.getDrawable();
+        }
+        for(int i = menu.size() - 1 ; i >= 0 ; i--) {
+            addView(mGooeyBackgrounds[i]);
+        }
+
+        for(int i = menu.size() - 1 ; i >= 0 ; i--) {
+            addView(mChildButtons[i]);
+        }
 
         addView(mParentButton);
 
@@ -152,44 +182,105 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
             @Override
             public void onClick(View view) {
+                mParentButton.setEnabled(false);
                 if(!enabled) {
-                    expand();
+                    expandAll();
                 } else {
-                    collapse();
+                    collapseAll();
                 }
                 enabled = !enabled;
-
-//                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
-//                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
-//                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
-//                startActivity(intent);
             }
         });
 
     }
 
-    void expand(){
-        gooeyDrawable = (GooeyDrawable) mGooeyBackground.getDrawable();
-        gooeyDrawable.stop();
-        gooeyDrawable.start();
-        mChildButton.setTranslationY(0);
-        mChildButton.animate()
-                .translationY(gooeyDrawable.getTranslationOffset())
-                .setStartDelay(0)
-                .setInterpolator(new AccelerateInterpolator())
+    void expandAll(){
+        setEnabled(false);
+        float parentOffset = ((GooeyDrawable) mGooeyBackgrounds[0].getDrawable()).getTranslationOffset();
+        expand(0, parentOffset);
+    }
+
+    void expand(final int position, final float parentOffset){
+        mGooeyBackgrounds[position].setVisibility(VISIBLE);
+        final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position].getDrawable();
+        gooeyDrawable.setDuration(150).start();
+
+        mChildButtons[position].animate()
+                .translationY(parentOffset + gooeyDrawable.getTranslationOffset() * position)
+                .setListener(new AnimatorListenerAdapter() {
+
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        mGooeyBackgrounds[position].setVisibility(VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        if(position < childCount - 1) {
+                            mGooeyBackgrounds[position + 1]
+                                    .setTranslationY(mGooeyBackgrounds[position].getTranslationY() + gooeyDrawable.getTranslationOffset());
+
+                            mChildButtons[position + 1]
+                                    .setTranslationY(mChildButtons[position].getTranslationY());
+
+                            expand(position + 1, parentOffset);
+                        } else {
+                            mParentButton.setEnabled(true);
+                        }
+                        if(position > 0){
+                            GooeyDrawable postGooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position - 1].getDrawable();
+
+                            if(!postGooeyDrawable.isGooeyed())
+                                mGooeyBackgrounds[position - 1].setVisibility(GONE);
+                        }
+                    }
+                })
+                .setInterpolator(new OvershootInterpolator())
                 .setDuration(gooeyDrawable.getDuration() / 2)
                 .start();
     }
 
-    void collapse(){
-        gooeyDrawable = (GooeyDrawable) mGooeyBackground.getDrawable();
-        gooeyDrawable.stop();
-        gooeyDrawable.reverse();
-        mChildButton.setTranslationY(gooeyDrawable.getTranslationOffset());
-        mChildButton.animate()
-                .translationY(0)
-                .setInterpolator(new DecelerateInterpolator())
-                .setStartDelay(gooeyDrawable.getDuration() / 2)
+    void collapseAll(){
+        final float parentOffset = ((GooeyDrawable) mGooeyBackgrounds[0].getDrawable()).getTranslationOffset();
+        collapse(childCount - 1, parentOffset);
+    }
+
+    void collapse(final int position, final float parentOffset){
+        final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position].getDrawable();
+        if(position == childCount - 1)
+            gooeyDrawable.setDuration(100).reverse();
+
+        mChildButtons[position].animate()
+                .translationY(parentOffset * (position != 0 ? 1 : 0) + gooeyDrawable.getTranslationOffset() * (position - 1 >= 0 ? position - 1 : 0))
+                .setListener(new AnimatorListenerAdapter() {
+
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        if(position < childCount - 1) {
+                            mGooeyBackgrounds[position + 1].setVisibility(GONE);
+                        }
+                        if(position > 0) {
+                            mGooeyBackgrounds[position - 1].setVisibility(VISIBLE);
+                            final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position - 1].getDrawable();
+                            gooeyDrawable.setDuration(100);
+                            gooeyDrawable.reverse();
+                        }
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mChildButtons[position].setTranslationY(0);
+                        if(position != 0){
+                            collapse(position - 1, parentOffset);
+                        } else {
+                            mParentButton.setEnabled(true);
+                            mGooeyBackgrounds[position].setVisibility(GONE);
+                        }
+                    }
+                })
+                .setInterpolator(new LinearInterpolator())
+                .setStartDelay(position == childCount - 1 ? gooeyDrawable.getDuration() / 2: 0)
                 .setDuration(gooeyDrawable.getDuration() / 2)
                 .start();
     }
@@ -198,56 +289,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int w = parentCircleRadius * 2;
-        int h = (int) ((parentCircleRadius + childCircleRadius) * 2 + offset + ResourceUtils.dpToPx(2, getContext()));
-
+        int h = (int) ((parentCircleRadius * 2 + (childCircleRadius * 2 + offset) * childCount + ResourceUtils.dpToPx(2, getContext())));
         setMeasuredDimension(w, h);
     }
-
-
-    //    <ImageView
-//    android:id="@+id/gooey_background"
-//    android:layout_width="65dp"
-//    android:layout_height="143dp"
-//    android:layout_gravity="bottom|end"
-//    android:elevation="8dp"
-//    android:layout_margin="20dp"/>
-//
-//    <android.support.v7.widget.CardView
-//    android:id="@+id/fab2"
-//    android:layout_width="52dp"
-//    android:layout_height="52dp"
-//    android:layout_gravity="bottom|end"
-//    android:elevation="8dp"
-//    android:layout_margin="26dp"
-//    app:cardCornerRadius="26dp"
-//    app:cardElevation="8dp"
-//    app:cardBackgroundColor="@color/colorAccent">
-//
-//        <ImageView
-//    android:layout_width="24dp"
-//    android:layout_height="24dp"
-//    android:layout_gravity="center"
-//    android:src="@drawable/ic_color_palette_white"/>
-//
-//    </android.support.v7.widget.CardView>
-//
-//
-//    <android.support.v7.widget.CardView
-//    android:id="@+id/fab1"
-//    android:layout_width="64dp"
-//    android:layout_height="64dp"
-//    android:layout_gravity="bottom|end"
-//    android:elevation="8dp"
-//    android:layout_margin="20dp"
-//    app:cardCornerRadius="32dp"
-//    app:cardElevation="8dp"
-//    app:cardBackgroundColor="@color/colorAccent">
-//
-//        <ImageView
-//    android:layout_width="28dp"
-//    android:layout_height="28dp"
-//    android:layout_gravity="center"
-//    android:src="@drawable/ic_search_vector"/>
-//
-//    </android.support.v7.widget.CardView>
 }

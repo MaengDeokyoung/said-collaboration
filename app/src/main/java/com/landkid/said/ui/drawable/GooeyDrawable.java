@@ -1,6 +1,5 @@
 package com.landkid.said.ui.drawable;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
@@ -9,23 +8,16 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.SystemClock;
-import android.util.TypedValue;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
+import android.support.annotation.NonNull;
+import android.view.Gravity;
 import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.OvershootInterpolator;
 
-import com.landkid.said.R;
-import com.landkid.said.util.ResourceUtils;
-
-/**
- * Created by SDS on 2017-04-24.
- */
 public class GooeyDrawable extends Drawable implements Animatable {
 
-    public static final long FRAME_DURATION = 1000 / 60;
-    private static final String TAG = "CircleDrawable";
+    private static final long FRAME_DURATION = 1000 / 60;
     private final Context mContext;
 
     private boolean reverse = false;
@@ -42,8 +34,7 @@ public class GooeyDrawable extends Drawable implements Animatable {
     private static final int RUN_STATE_STOPPING = 4;
     private int mFrame;
 
-    private int mStrokePx = 0;
-    private int mPadding;
+    private float mPadding;
 
     private Interpolator mInterpolator;
 
@@ -52,47 +43,99 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
     private int mHeight;
     private int mWidth;
-    private float mTotalProgress = 1000.0f;
+    private float mTotalProgress = 10000.0f;
 
-    Viewport viewport;
-    static final int DEFAULT_VIEWPORT_X = 220;
-    static final int DEFAULT_VIEWPORT_Y = 100;
+    private Viewport mViewport;
 
-    int mParentCircleRadius;
-    int mChildCircleRadius;
+    private float mParentCircleRadius;
+    private float mChildCircleRadius;
+    private float fraction = 0.0f;
 
-    class Viewport {
-        int x;
-        int y;
+    private boolean isGooeyed;
 
-        Viewport(int x, int y){
-            this.x = x;
-            this.y = y;
+    private int mGravity;
+
+
+    public boolean isGooeyed(){
+        return isGooeyed;
+    }
+
+    public void setGooeyed(boolean isGooeyed){
+        this.isGooeyed = isGooeyed;
+    }
+
+
+    private class Viewport {
+        float width;
+        float height;
+
+        Viewport(float width, float height){
+            this.width = width;
+            this.height = height;
         }
     }
 
-    private float fraction;
+    @Override
+    public int getIntrinsicWidth() {
+        return mWidth != 0 ? mWidth : super.getIntrinsicWidth();
+    }
+
+    @Override
+    public int getIntrinsicHeight() {
+        return  mHeight != 0 ? mHeight : super.getIntrinsicHeight();
+    }
 
     @Override
     public void setBounds(int left, int top, int right, int bottom) {
 
         mWidth = right - left;
         mHeight = bottom - top;
-
-        fraction = mWidth / 100.0f;
-
-        super.setBounds(left, top, right, bottom);
+        fraction =  fraction == 0 ? mWidth / 100.0f : fraction;
+        mViewport = new Viewport(relativeSize(mParentCircleRadius * 2 + mPadding + mChildCircleRadius * 2), relativeSize(mParentCircleRadius));
+        super.setBounds(0, 0, (int) mViewport.width, (int)  mViewport.height);
     }
 
-    public GooeyDrawable(Context context, int color) {
+    public GooeyDrawable(Context context,
+                         int color,
+                         Interpolator interpolator,
+                         int duration,
+                         float parentCircleRadius,
+                         float childCircleRadius,
+                         int padding) {
         mContext = context;
-        mInterpolator = new DecelerateInterpolator();
+        mInterpolator = interpolator;
         mColor = color;
-        mDuration = 500;
-        mPadding = 20;
-        mParentCircleRadius = 50;
-        mChildCircleRadius = 40;
-        viewport = new Viewport(DEFAULT_VIEWPORT_X, DEFAULT_VIEWPORT_Y);
+        mDuration = duration;
+        mPadding = padding;
+        mParentCircleRadius = parentCircleRadius;
+        mChildCircleRadius = childCircleRadius;
+        mGravity = Gravity.TOP;
+    }
+
+    public GooeyDrawable(Context context,
+                         int width,
+                         int height,
+                         int color,
+                         Interpolator interpolator,
+                         int duration,
+                         float parentCircleRadius,
+                         float childCircleRadius,
+                         float padding) {
+        mContext = context;
+        mWidth = width;
+        mHeight = height;
+        fraction = width / 100.0f;
+        mInterpolator = interpolator;
+        mColor = color;
+        mDuration = duration;
+        mPadding = padding / fraction;
+        mParentCircleRadius = parentCircleRadius / fraction;
+        mChildCircleRadius = childCircleRadius / fraction;
+        mGravity = Gravity.TOP;
+    }
+
+    public float getTranslationOffset(){
+        return - relativeSize(mParentCircleRadius + mChildCircleRadius + mPadding);
     }
 
     public float getFraction() {
@@ -103,52 +146,60 @@ public class GooeyDrawable extends Drawable implements Animatable {
         return mDuration;
     }
 
-    Interpolator getInterpolator(){
+    public GooeyDrawable setDuration(int duration) {
+        mDuration = duration;
+        return this;
+    }
+
+    public Interpolator getInterpolator(){
         return mInterpolator;
     }
 
-    public static float dpToPx(float size, Context context){
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, context.getResources().getDisplayMetrics());
-    }
-
-    public GooeyDrawable(Context context) {
-        this(context, ResourceUtils.getColor(R.color.colorAccent, context));
-    }
-
     @Override
-    public void draw(Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         mPaint = new Paint();
         mPaint.setColor(mColor);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);
 
         Path path = new Path();
-        //path.moveTo(dpToPx(50, mContext), dpToPx(50, mContext));
 
         switch (mRunState){
             case RUN_STATE_STARTING:
                 mRunState = RUN_STATE_STARTED;
+                draw(path, canvas, mGravity);
                 break;
             case RUN_STATE_STARTED:
-                draw(path, canvas, 0);
+                draw(path, canvas, mGravity);
                 break;
-
             case RUN_STATE_STOPPING:
-            case RUN_STATE_STOPPED:
-                mProgressAnim = mTotalProgress / 2;
-                draw(path, canvas, 0);
+                mProgressAnim = mTotalProgress;
+                draw(path, canvas, mGravity);
                 mRunState = RUN_STATE_STOPPED;
                 break;
-
+            case RUN_STATE_STOPPED:
+                mProgressAnim = mTotalProgress;
+                draw(path, canvas, mGravity);
+                break;
             default:
-                draw(path, canvas, 0);
+                mProgressAnim = 0;
+                draw(path, canvas, mGravity);
                 break;
         }
     }
 
-    void drawGooeyEffect(Path path, Canvas canvas){
-        path.addCircle(sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius), Path.Direction.CW);
-        path.addCircle(sizeWithFraction((int) getCircleCenterOffset()), sizeWithFraction(mParentCircleRadius), sizeWithFraction(mChildCircleRadius), Path.Direction.CW);
+    private void drawGooeyEffect(Path path, Canvas canvas){
+        path.addCircle(
+                relativeSize(mParentCircleRadius),
+                relativeSize(mParentCircleRadius),
+                relativeSize(mParentCircleRadius),
+                Path.Direction.CW);
+
+        path.addCircle(relativeSize(
+                mParentCircleRadius + getCircleCenterOffset()),
+                relativeSize(mParentCircleRadius),
+                relativeSize(mChildCircleRadius),
+                Path.Direction.CW);
 
         path.moveTo(
                 getTopLeftX(),
@@ -177,56 +228,62 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
         Path ovalPath = new Path();
         canvas.save();
-        canvas.rotate(-90, sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius));
-        canvas.translate(sizeWithFraction(-120), 0);
+        canvas.rotate(-90, relativeSize(mParentCircleRadius), relativeSize(mParentCircleRadius));
+        canvas.translate(relativeSize(- (mHeight / fraction - mParentCircleRadius * 2)), 0);
         canvas.drawPath(ovalPath, mPaint);
         canvas.drawPath(path, mPaint);
     }
 
-    void drawSeparationEffect(Path path, Canvas canvas){
+    private void drawSeparationEffect(Path path, Canvas canvas){
 
         path.addCircle(
-                sizeWithFraction(mParentCircleRadius),
-                sizeWithFraction(mParentCircleRadius),
-                sizeWithFraction(mParentCircleRadius),
+                relativeSize(mParentCircleRadius),
+                relativeSize(mParentCircleRadius),
+                relativeSize(mParentCircleRadius),
                 Path.Direction.CW);
         path.addCircle(
-                sizeWithFraction(mParentCircleRadius * 2 + mChildCircleRadius + mPadding),
-                sizeWithFraction(mParentCircleRadius),
-                sizeWithFraction(mChildCircleRadius),
+                relativeSize(mParentCircleRadius * 2 + mChildCircleRadius + mPadding),
+                relativeSize(mParentCircleRadius),
+                relativeSize(mChildCircleRadius),
                 Path.Direction.CW);
 
         Path ovalPath = new Path();
         ovalPath.addArc(
-                sizeWithFraction(- mPadding / 2 + (int) (mProgressAnim * mPadding / mTotalProgress)),
+                relativeSize(- mPadding / 2 + (int) ((mProgressAnim - mTotalProgress / 2 ) * mPadding / mTotalProgress)),
                 0,
-                sizeWithFraction(mParentCircleRadius * 2 + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
-                sizeWithFraction(mParentCircleRadius * 2),
+                relativeSize(mParentCircleRadius * 2 + mPadding / 2 - (int) ((mProgressAnim - mTotalProgress / 2) * mPadding / mTotalProgress)),
+                relativeSize(mParentCircleRadius * 2),
                 -90,
                 180);
         ovalPath.addArc(
-                sizeWithFraction(mParentCircleRadius * 2 + mPadding / 2 + (int) (mProgressAnim * mPadding / mTotalProgress)),
-                sizeWithFraction(getDifferC1AndC2()),
-                sizeWithFraction(mParentCircleRadius * 2 + mChildCircleRadius * 2 + mPadding + mPadding / 2 - (int) (mProgressAnim * mPadding / mTotalProgress)),
-                sizeWithFraction(mParentCircleRadius * 2 - getDifferC1AndC2()),
+                relativeSize(mParentCircleRadius * 2 + mPadding / 2 + (int) ((mProgressAnim - mTotalProgress / 2) * mPadding / mTotalProgress)),
+                relativeSize(getDifferC1AndC2()),
+                relativeSize(mParentCircleRadius * 2 + mChildCircleRadius * 2 + mPadding + mPadding / 2 - (int) ((mProgressAnim - mTotalProgress) * mPadding / mTotalProgress)),
+                relativeSize(mParentCircleRadius * 2 - getDifferC1AndC2()),
                 90,
                 180);
 
         canvas.save();
-        canvas.rotate(-90, sizeWithFraction(mParentCircleRadius), sizeWithFraction(mParentCircleRadius));
-        canvas.translate(sizeWithFraction(-120), 0);
+        canvas.rotate(-90, relativeSize(mParentCircleRadius), relativeSize(mParentCircleRadius));
+        canvas.translate(relativeSize( - (mHeight / fraction - mParentCircleRadius * 2)), 0);
         canvas.drawPath(ovalPath, mPaint);
         canvas.drawPath(path, mPaint);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    void draw(Path path, Canvas canvas, int gravity){
-        if(interpolatedFraction <= 1) {
-            drawGooeyEffect(path, canvas);
-        } else {
-            drawSeparationEffect(path, canvas);
-        }
+    private void draw(Path path, Canvas canvas, int gravity){
 
+        switch (gravity){
+            case Gravity.TOP:
+                if(mCurrentValue <= 1) {
+                    drawGooeyEffect(path, canvas);
+                } else if(!isGooeyed) {
+                    drawSeparationEffect(path, canvas);
+                } else {
+                    mProgressAnim = mTotalProgress / 2;
+                    drawGooeyEffect(path, canvas);
+                }
+                break;
+        }
     }
 
 
@@ -254,29 +311,25 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
     };
 
-    long startTime = 0;
-
-    float interpolatedFraction;
+    private float mCurrentValue;
 
     private void update() {
-        if(!reverse) {
-            mFrame += 1;
-        } else {
-            mFrame -= 1;
-        }
+        if(!reverse) mFrame += 1; else mFrame -= 1;
 
-        interpolatedFraction = mFrame / ((mDuration / 2) / (FRAME_DURATION * 1.0f));
+        mCurrentValue = mFrame / ((mDuration / 2) / (FRAME_DURATION * 1.0f));
 
-        if (0 < interpolatedFraction && interpolatedFraction <= 1) {
-            mProgressAnim = (int) ((mTotalProgress) * new AccelerateInterpolator().getInterpolation(interpolatedFraction)) / 2.0f;
-            if (isRunning())
-                scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
+        if(0 <= mCurrentValue && mCurrentValue < 2) {
+
+            if (0 <= mCurrentValue && mCurrentValue <= 1)
+                mProgressAnim = (int) ((mTotalProgress) * mInterpolator.getInterpolation(mCurrentValue)) / 2.0f;
+
+            else if (1 < mCurrentValue && mCurrentValue < 2)
+                mProgressAnim = (int) ((mTotalProgress) * new LinearInterpolator().getInterpolation(mCurrentValue - 1)) / 2.0f + mTotalProgress / 2;
+
+            if (isRunning()) scheduleSelf(mUpdater, SystemClock.uptimeMillis());
+
             invalidateSelf();
-        } else if (1 < interpolatedFraction && interpolatedFraction < 2) {
-            mProgressAnim = (int) ((mTotalProgress) * new DecelerateInterpolator().getInterpolation(interpolatedFraction - 1)) / 2.0f;
-            if (isRunning())
-                scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
-            invalidateSelf();
+
         } else {
             stop();
         }
@@ -285,49 +338,44 @@ public class GooeyDrawable extends Drawable implements Animatable {
     private void resetAnimation() {
         if(!reverse){
             mFrame = 0;
+            mProgressAnim = 0;
         } else {
-            mFrame = (int) ((mDuration) / (FRAME_DURATION * 1.0f));
+            mFrame = (int) (mDuration / (FRAME_DURATION * 1.0f));
+            mProgressAnim = mTotalProgress;
         }
-
-        mProgressAnim = 0;
     }
 
     public void reverse() {
-        if (isRunning())
-            return;
         reverse = true;
-        mRunState = RUN_STATE_STARTING;
-        resetAnimation();
-        scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
-        invalidateSelf();
-
+        mInterpolator = new LinearInterpolator();
+        invalidate(RUN_STATE_STARTING);
     }
 
     @Override
     public void start() {
-        if (isRunning())
-            return;
         reverse = false;
-        mRunState = RUN_STATE_STARTING;
-        resetAnimation();
-        scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
-        invalidateSelf();
-
+        mInterpolator = new OvershootInterpolator();
+        invalidate(RUN_STATE_STARTING);
     }
 
     @Override
     public void stop() {
-        if (!isRunning())
-            return;
-        resetAnimation();
-        mRunState = RUN_STATE_STOPPED;
-        unscheduleSelf(mUpdater);
-        //invalidateSelf();
+        invalidate(RUN_STATE_STOPPED);
     }
 
-    @Override
-    public void scheduleSelf(Runnable what, long when) {
-        super.scheduleSelf(what, when);
+    private void invalidate(int runState){
+        if (!isRunning()) return;
+        resetAnimation();
+        mRunState = runState;
+        switch (runState){
+            case RUN_STATE_STARTING:
+                scheduleSelf(mUpdater, SystemClock.uptimeMillis());
+                break;
+            case RUN_STATE_STOPPED:
+                unscheduleSelf(mUpdater);
+                break;
+        }
+        invalidateSelf();
     }
 
     @Override
@@ -335,83 +383,78 @@ public class GooeyDrawable extends Drawable implements Animatable {
         return mRunState != RUN_STATE_STOPPED;
     }
 
-    int getDifferC1AndC2(){
+    private float getDifferC1AndC2(){
         return mParentCircleRadius - mChildCircleRadius;
     }
 
-    float sizeWithFraction(float size){
+    private float relativeSize(float size){
 
         return fraction * size;
-    };
+    }
 
-    double getSinOffset(){
+    private double getSinOffset(){
         return Math.sin((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
     }
 
-    double getCosOffset(){
+    private double getCosOffset(){
         return Math.cos((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
     }
 
-    double getTanOffset(){
+    private double getTanOffset(){
         return Math.tan((Math.PI * 2 / 4) * mProgressAnim / (mTotalProgress));
     }
 
-
-    float getCircleCenterOffset(){
-        return mParentCircleRadius + mProgressAnim * 2 / 10.0f + mPadding * mProgressAnim * 2 / mTotalProgress;
+    private float getCircleCenterOffset(){
+        return (mParentCircleRadius + mChildCircleRadius + mPadding) * mProgressAnim * 2 / mTotalProgress;
     }
 
-    float getTopLeftX(){
-        return sizeWithFraction((float) (mParentCircleRadius * (1 + getSinOffset())));
+    private float getTopLeftX(){
+        return relativeSize((float) (mParentCircleRadius * (1 + getSinOffset())));
     }
 
-    float getTopLeftY(){
-        return sizeWithFraction((float) (mParentCircleRadius * (1 - getCosOffset())));
+    private float getTopLeftY(){
+        return relativeSize((float) (mParentCircleRadius * (1 - getCosOffset())));
     }
 
-    float getTopCenterX(){
-
-        return (getTopLeftX() + getTopRightX()) * 0.5f;
+    private float getTopCenterX(){
+        return (getTopLeftX()) + (getTopRightX() - getTopLeftX()) * mParentCircleRadius / (mParentCircleRadius + mChildCircleRadius);
     }
 
-    float getTopCenterY(){
+    private float getTopCenterY(){
 
         return (float) (((getTopRightX() - getTopLeftX()) / 2) * getTanOffset() + getTopLeftY());
     }
 
-    float getTopRightX(){
-        return sizeWithFraction((float) (getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
+    private float getTopRightX(){
+        return relativeSize((float) (mParentCircleRadius + getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
     }
 
-    float getTopRightY(){
-        return sizeWithFraction((float) (mChildCircleRadius * (1 - getCosOffset())) + getDifferC1AndC2());
+    private float getTopRightY(){
+        return relativeSize((float) (mChildCircleRadius * (1 - getCosOffset())) + getDifferC1AndC2());
     }
 
-
-    float getBottomLeftX(){
-        return sizeWithFraction((float) (mParentCircleRadius * (1 + getSinOffset())));
+    private float getBottomLeftX(){
+        return relativeSize((float) (mParentCircleRadius * (1 + getSinOffset())));
     }
 
-    float getBottomLeftY(){
-        return sizeWithFraction(mParentCircleRadius * 2) - getTopLeftY();
+    private float getBottomLeftY(){
+        return relativeSize(mParentCircleRadius * 2) - getTopLeftY();
     }
 
-    float getBottomCenterX(){
-
+    private float getBottomCenterX(){
         return getTopCenterX();
     }
 
-    float getBottomCenterY(){
-
-        return sizeWithFraction(mParentCircleRadius * 2) - getTopCenterY();
+    private float getBottomCenterY(){
+        return relativeSize(mParentCircleRadius * 2) - getTopCenterY();
     }
 
-    float getBottomRightX(){
-        return sizeWithFraction((float) (getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
+    private float getBottomRightX(){
+        return relativeSize((float) (mParentCircleRadius + getCircleCenterOffset() - mChildCircleRadius * getSinOffset()));
     }
 
-    float getBottomRightY(){
-        return sizeWithFraction(mParentCircleRadius * 2) - getTopRightY();
+    private float getBottomRightY(){
+        return relativeSize(mParentCircleRadius * 2) - getTopRightY();
     }
 
 }

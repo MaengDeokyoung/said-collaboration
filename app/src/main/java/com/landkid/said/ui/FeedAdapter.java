@@ -47,7 +47,9 @@ import com.landkid.said.data.api.dribbble.DribbblePrefs;
 import com.landkid.said.data.api.model.Like;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.util.FeedsScrollEvent;
 import com.landkid.said.util.ResourceUtils;
+import com.squareup.otto.Subscribe;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -153,12 +155,14 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
                 Intent intent = new Intent(v.getContext(), SubActivity.class);
                 intent.putExtra(KEY_SHOT, shot);
 
-                ActivityOptionsCompat options = ActivityOptionsCompat.
-                        makeSceneTransitionAnimation((Activity) mContext, holder.imageCard, ResourceUtils.getString(R.string.shared_image, mContext));
-                mContext.startActivity(intent, options.toBundle());
+//                ActivityOptionsCompat options = ActivityOptionsCompat.
+//                        makeSceneTransitionAnimation((Activity) mContext, holder.imageCard, ResourceUtils.getString(R.string.shared_image, mContext));
+                mContext.startActivity(intent);
                 //mContext.startActivity(intent);
             }
         });
+
+
 
         Glide.with(holder.itemView.getContext())
                 .load(shot.images.best())
@@ -376,6 +380,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
     static class ItemViewHolder extends FeedViewHolder {
 
         @BindView(R.id.tv_username) TextView username;
+        //@BindView(R.id.iv_image) ImageView image;
         @BindView(R.id.iv_image) ImageView image;
         //@BindView(R.id.iv_profile_photo) ImageView profilePhoto;
         @BindView(R.id.tv_like_count) TextView likeCount;
@@ -399,6 +404,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
+
     }
 
     static class HeaderViewHolder extends FeedViewHolder {

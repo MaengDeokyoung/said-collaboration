@@ -3,6 +3,7 @@ package com.landkid.said.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -14,6 +15,8 @@ import android.support.v7.widget.CardView;
 import android.text.Html;
 import android.text.util.Linkify;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -110,8 +113,6 @@ public class SubActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sub);
         ButterKnife.bind(this);
 
-
-
         Intent intent = getIntent();
         Shot shot = intent.getParcelableExtra(FeedAdapter.KEY_SHOT);
 
@@ -145,7 +146,6 @@ public class SubActivity extends AppCompatActivity {
                     public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
                         super.onResourceReady(resource, animation);
 
-
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -173,6 +173,15 @@ public class SubActivity extends AppCompatActivity {
                                 bundle.putIntArray("colors", colors);
                                 msg.setData(bundle);
                                 colorHandler.sendMessage(msg);
+
+                                if(vibrantSwatch != -1) {
+                                    if (Build.VERSION.SDK_INT >= 21) {
+                                        Window window = getWindow();
+                                        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                                        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                                        window.setStatusBarColor(vibrantLightSwatch);
+                                    }
+                                }
 
                             }
                         }).start();

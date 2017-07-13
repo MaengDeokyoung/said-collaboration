@@ -34,7 +34,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.airbnb.lottie.LottieAnimationView;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.landkid.said.R;
 import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.ShotDataManager;
@@ -42,9 +42,8 @@ import com.landkid.said.data.api.SearchDataManager;
 import com.landkid.said.data.api.dribbble.DribbblePrefs;
 import com.landkid.said.data.api.model.Shot;
 import com.landkid.said.ui.drawable.GooeyDrawable;
-import com.landkid.said.ui.widget.SearchActivity;
+import com.landkid.said.util.BusProvider;
 import com.landkid.said.util.ResourceUtils;
-import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
 
@@ -192,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the ic_menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+
         return true;
     }
 
@@ -263,14 +263,73 @@ public class MainActivity extends AppCompatActivity {
         };
         infiniteScrollListener.addDataManager(shotDataManager);
         mRvFeeds.addOnScrollListener(infiniteScrollListener);
+        mRvFeeds.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            int newState;
+
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                this.newState = newState;
+                if(newState == RecyclerView.SCROLL_AXIS_NONE) {
+                    for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
+                        if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
+                            FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
+                            if (holder != null) {
+                                holder.imageCard.animate()
+                                        .translationY(0)
+                                        .setDuration(700)
+                                        .start();
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if(this.newState != RecyclerView.SCROLL_STATE_IDLE) {
+                    for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
+                        if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
+                            FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
+                            if (holder != null) {
+                                if (dy > 0 && holder.imageCard.getTranslationY() <= 20)
+                                    holder.imageCard.setTranslationY(holder.imageCard.getTranslationY() + dy / 5.0f);
+
+                                if (dy < 0 && holder.imageCard.getTranslationY() >= -20)
+                                    holder.imageCard.setTranslationY(holder.imageCard.getTranslationY() + dy / 5.0f);
+
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
 
     }
+
+
 
     void showProgress(int gravity){
         ((CoordinatorLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
         mPbLoading.setVisibility(View.VISIBLE);
         mPbLoading.requestLayout();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
+//            if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
+//                FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
+//                if (holder != null) {
+//                    GlideDrawable drawable = (GlideDrawable) holder.image.getDrawable();
+//                    drawable.setVisible(true, true);
+//                }
+//            }
+//        }
     }
 
     @Override
@@ -288,6 +347,7 @@ public class MainActivity extends AppCompatActivity {
 //                .addItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-Italic.ttf"));
 
         setContentView(R.layout.activity_main);
+        BusProvider.getInstance().register(this);
         ButterKnife.bind(this);
         setActionBarAndDrawer();
 
@@ -322,11 +382,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        CardView fab = (CardView) findViewById(R.id.fab1);
+        /*CardView fab = (CardView) findViewById(R.id.fab1);
         final CardView fab2 = (CardView) findViewById(R.id.fab2);
         ImageView fabBackground = (ImageView) findViewById(R.id.gooey_background);
+        fabBackground.getLayoutParams().width = fab.getLayoutParams().width;
+        fabBackground.getLayoutParams().height = (int) (fab.getLayoutParams().height + fab2.getLayoutParams().height + ResourceUtils.dpToPx(10, getApplicationContext()));
+        fabBackground.requestLayout();
+        fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext(),
+                fab.getLayoutParams().width,
+                (int) (fab.getLayoutParams().height + fab2.getLayoutParams().height + ResourceUtils.dpToPx(10, getApplicationContext())),
+                fab2.getCardBackgroundColor().getColorForState(fab2.getDrawableState(), 0),
+                new DecelerateInterpolator(),
+                500,
+                fab.getRadius(),
+                fab2.getRadius(),
+                ResourceUtils.dpToPx(10, getApplicationContext())));
 
-        fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext()));
+        //fab.setVisibility(View.INVISIBLE);
+        //fab2.setVisibility(View.INVISIBLE);
+        //fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext()));
         final GooeyDrawable animatable = (GooeyDrawable) fabBackground.getDrawable();
         animatable.stop();
 
@@ -340,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
                     animatable.start();
                     fab2.setTranslationY(0);
                     fab2.animate()
-                            .translationY(-110 * animatable.getFraction())
+                            .translationY(animatable.getTranslationOffset())
                             .setStartDelay(0)
                             .setInterpolator(new AccelerateInterpolator())
                             .setDuration(animatable.getDuration() / 2)
@@ -348,7 +422,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
 
                     animatable.reverse();
-                    fab2.setTranslationY(-110 * animatable.getFraction());
+                    fab2.setTranslationY(animatable.getTranslationOffset());
                     fab2.animate()
                             .translationY(0)
                             .setInterpolator(new DecelerateInterpolator())
@@ -363,7 +437,7 @@ public class MainActivity extends AppCompatActivity {
 //                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
 //                startActivity(intent);
             }
-        });
+        });*/
 
         dribbblePrefs = DribbblePrefs.get(getApplicationContext());
 
@@ -378,4 +452,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
     DribbblePrefs dribbblePrefs;
+
+    @Override
+    protected void onDestroy() {
+        BusProvider.getInstance().unregister(this);
+        super.onDestroy();
+    }
 }
