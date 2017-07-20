@@ -7,4 +7,7 @@
     <string name="popular"><![CDATA[Popular Shots]]></string>
     <string name="shared_image">shared_image</string>
 
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 </resources>

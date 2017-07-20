@@ -2,19 +2,34 @@ package com.landkid.said.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.text.util.LinkifyCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Html;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
 import android.text.util.Linkify;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
@@ -30,12 +45,23 @@ import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.landkid.said.R;
+import com.landkid.said.data.api.dribbble.DribbblePrefs;
+import com.landkid.said.data.api.model.Comment;
+import com.landkid.said.data.api.model.Like;
+import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.util.ResourceUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by landkid on 2017. 6. 18..
@@ -63,6 +89,8 @@ public class SubActivity extends AppCompatActivity {
     @BindView(R.id.location) TextView location;
 
     @BindView(R.id.sub_image) ImageView image;
+    @BindView(R.id.fab_back) FloatingActionButton fabBack;
+    @BindView(R.id.rv_comments) RecyclerView rvComments;
 
 
     final Handler colorHandler = new Handler(){
@@ -116,11 +144,41 @@ public class SubActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Shot shot = intent.getParcelableExtra(FeedAdapter.KEY_SHOT);
 
+        fabBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
+
         title.setText(shot.title);
 
         if(shot.description != null) {
-            description.setText(Html.fromHtml(shot.description));
+
+            int[][] states = new int[][] {
+                    new int[] { android.R.attr.state_pressed}, // enabled
+                    new int[] {}, // disabled
+            };
+
+            int[] colors = new int[] {
+                    ResourcesCompat.getColor(getResources(), R.color.colorHeartFilled, getTheme()),
+                    ResourcesCompat.getColor(getResources(), R.color.colorHeartFilled, getTheme())
+            };
+
+            final ColorStateList linkTextColor = new ColorStateList(states, colors);
+
+
+            Spannable span = new SpannableString(Html.fromHtml(shot.description));
+            description.setText(span);
+
+            //description.setText(Html.fromHtml(shot.description));
+
+
+
             LinkifyCompat.addLinks(description, Linkify.ALL);
+
+
+            description.setLinkTextColor(linkTextColor);
         } else {
             description.setVisibility(View.GONE);
         }
@@ -131,6 +189,21 @@ public class SubActivity extends AppCompatActivity {
 
         designerName.setText(Html.fromHtml(shot.user.name));
         location.setText(shot.user.location);
+
+        setCommentsView();
+
+        final Call<List<Comment>> commentsCall = DribbblePrefs.get(getApplicationContext()).getApi().getComments(shot.id);
+        commentsCall.enqueue(new Callback<List<Comment>>() {
+            @Override
+            public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
+                ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
+            }
+
+            @Override
+            public void onFailure(Call<List<Comment>> call, Throwable t) {
+
+            }
+        });
 
         Glide.with(getApplicationContext())
                 .load(shot.user.avatar_url)
@@ -179,7 +252,7 @@ public class SubActivity extends AppCompatActivity {
                                         Window window = getWindow();
                                         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                                         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-                                        window.setStatusBarColor(vibrantLightSwatch);
+                                        window.setStatusBarColor(vibrantSwatch);
                                     }
                                 }
 
@@ -191,6 +264,13 @@ public class SubActivity extends AppCompatActivity {
                 });
     }
 
+    void setCommentsView(){
+        rvComments.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+        CommentsAdapter adapter = new CommentsAdapter(getApplicationContext());
+        rvComments.setAdapter(adapter);
+        rvComments.setVerticalScrollBarEnabled(false);
+    }
+
     void setSwatchColor(CardView view, int swatch, int order){
         if(swatch != -1) {
             view.setCardBackgroundColor(swatch);
@@ -198,5 +278,70 @@ public class SubActivity extends AppCompatActivity {
         } else {
             view.setVisibility(View.GONE);
         }
+    }
+
+    private class CommentsAdapter extends RecyclerView.Adapter<CommentsViewHolder>{
+
+        List<Comment> comments;
+        DribbblePrefs dribbblePrefs;
+        Context mContext;
+
+        CommentsAdapter(Context context) {
+            this.comments = new ArrayList<>();
+            this.dribbblePrefs = DribbblePrefs.get(context);
+            this.mContext = context;
+        }
+
+        public void setComments(List<Comment> comments){
+            this.comments = comments;
+            notifyDataSetChanged();
+        }
+
+        public void addShots(List<Comment> comments) {
+
+//        int previousShotLength = shots.size();
+//        for (SaidItem shot : shots) {
+//            this.shots.add((Shot) shot);
+//        }
+//        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
+            for (Comment comment : comments) {
+                this.comments.add(comment);
+            }
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public CommentsViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
+            return new CommentsViewHolder(view);        }
+
+        @Override
+        public void onBindViewHolder(CommentsViewHolder holder, int position) {
+            Comment comment = comments.get(position);
+            holder.userName.setText(comment.user.name);
+            holder.comment.setText(Html.fromHtml(comment.body.toString()));
+
+            Glide.with(getApplicationContext())
+                    .load(comment.user.avatar_url)
+                    .into(holder.profilePhoto);
+        }
+
+        @Override
+        public int getItemCount() {
+            return comments.size();
+        }
+    }
+
+    class CommentsViewHolder extends RecyclerView.ViewHolder{
+
+        @BindView(R.id.profile_photo) ImageView profilePhoto;
+        @BindView(R.id.user_name) TextView userName;
+        @BindView(R.id.comment) TextView comment;
+
+        public CommentsViewHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
+        }
+
     }
 }

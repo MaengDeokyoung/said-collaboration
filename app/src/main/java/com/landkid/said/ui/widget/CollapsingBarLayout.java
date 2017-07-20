@@ -339,7 +339,6 @@ public class CollapsingBarLayout extends FrameLayout {
                     mFirstBarHeight = mVFirstBar.getMeasuredHeight();
                 } else {
                     mTargetView.setTranslationY(mVFirstBar.getMeasuredHeight());
-
                     mFirstBarHeight = mVFirstBar.getMeasuredHeight();
                 }
             }
@@ -509,10 +508,6 @@ public class CollapsingBarLayout extends FrameLayout {
                         mSecondBarOffset = newOffset;
                         mDependencyOffset = mSecondBarHeight + newOffset;
 
-
-//                        mTargetView.setTranslationY(mSecondBarHeight + newOffset);
-//                        mVSecondBar.setTranslationY(newOffset);
-
                     } else {
 
                         if (adjustedOffset > heightDifference) {
@@ -532,9 +527,6 @@ public class CollapsingBarLayout extends FrameLayout {
                         mSecondBarOffset = newOffset + heightDifference;
                         mDependencyOffset = mFirstBarHeight + newOffset;
 
-//                        mVFirstBar.setTranslationY(newOffset);
-//                        mTargetView.setTranslationY(mFirstBarHeight + newOffset);
-//                        mVSecondBar.setTranslationY();
                     }
 
                     updateOffset(collapsingBarLayout);
@@ -566,7 +558,7 @@ public class CollapsingBarLayout extends FrameLayout {
         }
 
         private boolean isMultiBar(){
-            return mBarCount > 1 ? true : false;
+            return mBarCount > 1;
         }
 
         private class ViewFlingHelper implements Runnable {

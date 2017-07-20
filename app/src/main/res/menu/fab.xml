@@ -11,14 +11,4 @@
         android:id="@+id/palette_search"
         android:title="Palette Search"/>
 
-    <item
-        android:icon="@drawable/ic_text_vector"
-        android:id="@+id/text_search1"
-        android:title="Text Search"/>
-
-    <item
-        android:icon="@drawable/ic_color_palette_white"
-        android:id="@+id/palette_search2"
-        android:title="Palette Search"/>
-
 </menu>

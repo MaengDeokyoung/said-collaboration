@@ -6,26 +6,21 @@ import android.graphics.Rect;
 import android.graphics.drawable.Animatable;
 import android.support.annotation.StringDef;
 import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -34,16 +29,14 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.landkid.said.R;
 import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.ShotDataManager;
 import com.landkid.said.data.api.SearchDataManager;
 import com.landkid.said.data.api.dribbble.DribbblePrefs;
 import com.landkid.said.data.api.model.Shot;
-import com.landkid.said.ui.drawable.GooeyDrawable;
+import com.landkid.said.ui.widget.GooeyFloatingActionButton;
 import com.landkid.said.util.BusProvider;
-import com.landkid.said.util.ResourceUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
 
@@ -69,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.iv_search) ImageView mIvSearch;
     @BindView(R.id.pb_loading) ProgressBar mPbLoading;
     @BindView(R.id.bt_login) Button mBtLogin;
+    @BindView(R.id.fab_search) GooeyFloatingActionButton mFabSearch;
     //@BindView(R.id.pb_loading) LottieAnimationView mPxbLoading;
     //@BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
 
@@ -306,30 +300,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
-
     }
-
-
 
     void showProgress(int gravity){
         ((CoordinatorLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
         mPbLoading.setVisibility(View.VISIBLE);
         mPbLoading.requestLayout();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-//        for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
-//            if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
-//                FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
-//                if (holder != null) {
-//                    GlideDrawable drawable = (GlideDrawable) holder.image.getDrawable();
-//                    drawable.setVisible(true, true);
-//                }
-//            }
-//        }
     }
 
     @Override
@@ -365,88 +341,65 @@ public class MainActivity extends AppCompatActivity {
                 FeedAdapter.FeedViewHolder holder = (FeedAdapter.FeedViewHolder) parent.getChildViewHolder(view);
                 int position = holder.getAdapterPosition();
 
-//                if (position == 0) {
-//                    TypedValue typedValue = new TypedValue();
-//                    getTheme().resolveAttribute(R.attr.actionBarSize, typedValue, true);
-//                    outRect.top = (int) typedValue.getDimension(getResources().getDisplayMetrics());
-//                }
-
                 outRect.top = (int) (20 * getResources().getDisplayMetrics().density);
 
                 if(position != parent.getAdapter().getItemCount() - 1) {
-                    //outRect.bottom = (int) (20 * getResources().getDisplayMetrics().density);
+
                 } else {
                     outRect.bottom = (int) (150 * getResources().getDisplayMetrics().density);
                 }
-                //super.getItemOffsets(outRect, view, parent, state);
             }
         });
 
-        /*CardView fab = (CardView) findViewById(R.id.fab1);
-        final CardView fab2 = (CardView) findViewById(R.id.fab2);
-        ImageView fabBackground = (ImageView) findViewById(R.id.gooey_background);
-        fabBackground.getLayoutParams().width = fab.getLayoutParams().width;
-        fabBackground.getLayoutParams().height = (int) (fab.getLayoutParams().height + fab2.getLayoutParams().height + ResourceUtils.dpToPx(10, getApplicationContext()));
-        fabBackground.requestLayout();
-        fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext(),
-                fab.getLayoutParams().width,
-                (int) (fab.getLayoutParams().height + fab2.getLayoutParams().height + ResourceUtils.dpToPx(10, getApplicationContext())),
-                fab2.getCardBackgroundColor().getColorForState(fab2.getDrawableState(), 0),
-                new DecelerateInterpolator(),
-                500,
-                fab.getRadius(),
-                fab2.getRadius(),
-                ResourceUtils.dpToPx(10, getApplicationContext())));
-
-        //fab.setVisibility(View.INVISIBLE);
-        //fab2.setVisibility(View.INVISIBLE);
-        //fabBackground.setImageDrawable(new GooeyDrawable(getApplicationContext()));
-        final GooeyDrawable animatable = (GooeyDrawable) fabBackground.getDrawable();
-        animatable.stop();
-
-        fab.setOnClickListener(new View.OnClickListener() {
-
-            boolean enabled = false;
-
-            @Override
-            public void onClick(View view) {
-                if(!enabled) {
-                    animatable.start();
-                    fab2.setTranslationY(0);
-                    fab2.animate()
-                            .translationY(animatable.getTranslationOffset())
-                            .setStartDelay(0)
-                            .setInterpolator(new AccelerateInterpolator())
-                            .setDuration(animatable.getDuration() / 2)
-                            .start();
-                } else {
-
-                    animatable.reverse();
-                    fab2.setTranslationY(animatable.getTranslationOffset());
-                    fab2.animate()
-                            .translationY(0)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .setStartDelay(animatable.getDuration() / 2)
-                            .setDuration(animatable.getDuration() / 2)
-                            .start();
-                }
-                enabled = !enabled;
-
-//                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
-//                intent.putExtra("cx", view.getX() + view.getWidth() / 2);
-//                intent.putExtra("cy", view.getY() + view.getHeight() / 2);
-//                startActivity(intent);
-            }
-        });*/
-
         dribbblePrefs = DribbblePrefs.get(getApplicationContext());
-
 
         mBtLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent login = new Intent(MainActivity.this, DribbbleLogin.class);
                 startActivity(login);
+            }
+        });
+
+        mFabSearch.setOnOptionItemClickListener(new GooeyFloatingActionButton.OnOptionItemClickListener() {
+            @Override
+            public boolean onItemClick(View view, int itemId) {
+
+                switch (itemId){
+                    case R.id.text_search:
+
+                        int cx = (int) (view.getX() + view.getWidth() / 2 + mFabSearch.getX());
+                        int cy = (int) (view.getY() + view.getHeight() / 2 + mFabSearch.getY());
+
+                        //mFabSearch.setEnabled(false);
+                        //mFabSearch.collapseAll();
+
+                        float toTranslationY = - mFabSearch.getY()
+                                - mFabSearch.getMeasuredHeight() +
+                                (mFabSearch.getParentCircleRadius()) * 2 +
+                                ((ViewGroup.MarginLayoutParams)mFabSearch.getLayoutParams()).getMarginEnd();
+
+                        mFabSearch.animate()
+                                .translationY(toTranslationY)
+                                .setInterpolator(new FastOutSlowInInterpolator())
+                                .setStartDelay(300)
+                                .setDuration(300)
+                                .start();
+
+                        SearchFragment searchFragment = SearchFragment.newInstance("TEXT", cx, cy);
+                        getSupportFragmentManager()
+                                .beginTransaction()
+                                .addToBackStack(null)
+                                .replace(R.id.search_fragment, searchFragment)
+                                .commit();
+
+                        return true;
+
+                    case R.id.palette_search:
+
+                        return true;
+                }
+                return false;
             }
         });
 

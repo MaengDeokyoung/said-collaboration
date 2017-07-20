@@ -9,6 +9,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.PopupMenu;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,6 +44,17 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
     private int childCount;
     private Drawable[] childDrawable;
+    private OnOptionItemClickListener mOnOptionItemClickListener;
+
+    private OnParentItemClickListener mParentItemClickListener;
+
+    public void setOnOptionItemClickListener(OnOptionItemClickListener onOptionItemClickListener) {
+        this.mOnOptionItemClickListener = onOptionItemClickListener;
+    }
+
+    public OnOptionItemClickListener getOnOptionItemClickListener() {
+        return mOnOptionItemClickListener;
+    }
 
     public GooeyFloatingActionButton(Context context) {
         this(context, null, 0);
@@ -70,6 +82,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
     };
 
     void initView(Context context, AttributeSet attrs, int defStyleAttr){
+        setLayerType(LAYER_TYPE_SOFTWARE, null);
 
         MenuInflater menuInflater = new MenuInflater(getContext());
         PopupMenu p  = new PopupMenu(getContext(), null);
@@ -88,7 +101,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
         mParentButton.setLayoutParams(parentLp);
         mParentButton.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()));
         mParentButton.setRadius(parentCircleRadius);
-        mParentButton.setCardElevation(0);
+        mParentButton.setCardElevation(0 * getContext().getResources().getDisplayMetrics().density);
 
         ImageView parentIcon = new ImageView(context);
         CardView.LayoutParams parentIconLP = new CardView.LayoutParams((int) (parentCircleRadius * 2 * 7 / 16.0f), (int) (parentCircleRadius * 2 * 7 / 16.0f));
@@ -151,7 +164,21 @@ public class GooeyFloatingActionButton extends FrameLayout {
             childButton.setLayoutParams(childLp);
             childButton.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()));
             childButton.setRadius(childCircleRadius);
-            childButton.setCardElevation(0);
+            childButton.setCardElevation(0 * getContext().getResources().getDisplayMetrics().density);
+            childButton.setId(menuItem.getItemId());
+            childButton.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(mOnOptionItemClickListener != null) {
+                        if(mOnOptionItemClickListener.onItemClick(v, v.getId())) {
+                            collapseAll();
+                            mParentItemClickListener.setEnabled(false);
+
+                        }
+                        Log.d(v.getId() + "", "onClick: " + "clicked");
+                    }
+                }
+            });
 
             ImageView childIcon = new ImageView(context);
             CardView.LayoutParams childIconLP = new CardView.LayoutParams((int) (childCircleRadius * 2 * 7 / 16.0f), (int) (childCircleRadius * 2 * 7 / 16.0f));
@@ -176,34 +203,50 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
         addView(mParentButton);
 
-        mParentButton.setOnClickListener(new View.OnClickListener() {
+        mParentItemClickListener = new OnParentItemClickListener();
 
-            boolean enabled = false;
-
-            @Override
-            public void onClick(View view) {
-                mParentButton.setEnabled(false);
-                if(!enabled) {
-                    expandAll();
-                } else {
-                    collapseAll();
-                }
-                enabled = !enabled;
-            }
-        });
+        mParentButton.setOnClickListener(mParentItemClickListener);
 
     }
 
-    void expandAll(){
+    class OnParentItemClickListener implements View.OnClickListener {
+
+        public boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        @Override
+        public void onClick(View view) {
+            mParentButton.setEnabled(false);
+            if(!enabled) {
+                expandAll();
+            } else {
+                collapseAll();
+            }
+            enabled = !enabled;
+        }
+    }
+
+    public int getParentCircleRadius() {
+        return parentCircleRadius;
+    }
+
+    public void expandAll(){
         setEnabled(false);
         float parentOffset = ((GooeyDrawable) mGooeyBackgrounds[0].getDrawable()).getTranslationOffset();
         expand(0, parentOffset);
     }
 
-    void expand(final int position, final float parentOffset){
+    private void expand(final int position, final float parentOffset){
         mGooeyBackgrounds[position].setVisibility(VISIBLE);
         final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position].getDrawable();
-        gooeyDrawable.setDuration(150).start();
+        gooeyDrawable.setDuration(200).start();
 
         mChildButtons[position].animate()
                 .translationY(parentOffset + gooeyDrawable.getTranslationOffset() * position)
@@ -235,20 +278,23 @@ public class GooeyFloatingActionButton extends FrameLayout {
                         }
                     }
                 })
-                .setInterpolator(new OvershootInterpolator())
+                .setInterpolator(new LinearInterpolator())
+                .setStartDelay(0)
                 .setDuration(gooeyDrawable.getDuration() / 2)
                 .start();
     }
 
-    void collapseAll(){
+    public void collapseAll(){
+
         final float parentOffset = ((GooeyDrawable) mGooeyBackgrounds[0].getDrawable()).getTranslationOffset();
         collapse(childCount - 1, parentOffset);
+
     }
 
-    void collapse(final int position, final float parentOffset){
+    private void collapse(final int position, final float parentOffset){
         final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position].getDrawable();
         if(position == childCount - 1)
-            gooeyDrawable.setDuration(100).reverse();
+            gooeyDrawable.setDuration(150).reverse();
 
         mChildButtons[position].animate()
                 .translationY(parentOffset * (position != 0 ? 1 : 0) + gooeyDrawable.getTranslationOffset() * (position - 1 >= 0 ? position - 1 : 0))
@@ -262,7 +308,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
                         if(position > 0) {
                             mGooeyBackgrounds[position - 1].setVisibility(VISIBLE);
                             final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position - 1].getDrawable();
-                            gooeyDrawable.setDuration(100);
+                            gooeyDrawable.setDuration(150);
                             gooeyDrawable.reverse();
                         }
 
@@ -291,5 +337,9 @@ public class GooeyFloatingActionButton extends FrameLayout {
         int w = parentCircleRadius * 2;
         int h = (int) ((parentCircleRadius * 2 + (childCircleRadius * 2 + offset) * childCount + ResourceUtils.dpToPx(2, getContext())));
         setMeasuredDimension(w, h);
+    }
+
+    public interface OnOptionItemClickListener{
+        boolean onItemClick(View view, int itemId);
     }
 }

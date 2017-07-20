@@ -18,6 +18,7 @@ package com.landkid.said.data.api.dribbble;
 
 import android.support.annotation.StringDef;
 
+import com.landkid.said.data.api.model.Comment;
 import com.landkid.said.data.api.model.Like;
 import com.landkid.said.data.api.model.Shot;
 
@@ -58,4 +59,7 @@ public interface DribbbleService {
 
     @DELETE("v1/shots/{id}/like")
     Call<Void> unlike(@Path("id") long shotId);
+
+    @GET("v1/shots/{id}/comments")
+    Call<List<Comment>> getComments(@Path("id") long shotId);
 }

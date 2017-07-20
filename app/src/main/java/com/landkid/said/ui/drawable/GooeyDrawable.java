@@ -320,13 +320,13 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
         if(0 <= mCurrentValue && mCurrentValue < 2) {
 
-            if (0 <= mCurrentValue && mCurrentValue <= 1)
+            if (0 <= mCurrentValue && mCurrentValue <= 1) {
                 mProgressAnim = (int) ((mTotalProgress) * mInterpolator.getInterpolation(mCurrentValue)) / 2.0f;
-
-            else if (1 < mCurrentValue && mCurrentValue < 2)
+            } else if (1 < mCurrentValue && mCurrentValue < 2) {
                 mProgressAnim = (int) ((mTotalProgress) * new LinearInterpolator().getInterpolation(mCurrentValue - 1)) / 2.0f + mTotalProgress / 2;
+            }
 
-            if (isRunning()) scheduleSelf(mUpdater, SystemClock.uptimeMillis());
+            if (isRunning()) scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
 
             invalidateSelf();
 
@@ -346,6 +346,8 @@ public class GooeyDrawable extends Drawable implements Animatable {
     }
 
     public void reverse() {
+        if (isRunning())
+            return;
         reverse = true;
         mInterpolator = new LinearInterpolator();
         invalidate(RUN_STATE_STARTING);
@@ -353,23 +355,27 @@ public class GooeyDrawable extends Drawable implements Animatable {
 
     @Override
     public void start() {
+        if (isRunning())
+            return;
         reverse = false;
-        mInterpolator = new OvershootInterpolator();
+        mInterpolator = new LinearInterpolator();
         invalidate(RUN_STATE_STARTING);
     }
 
     @Override
     public void stop() {
+        if (!isRunning())
+            return;
         invalidate(RUN_STATE_STOPPED);
     }
 
     private void invalidate(int runState){
-        if (!isRunning()) return;
+
         resetAnimation();
         mRunState = runState;
         switch (runState){
             case RUN_STATE_STARTING:
-                scheduleSelf(mUpdater, SystemClock.uptimeMillis());
+                scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
                 break;
             case RUN_STATE_STOPPED:
                 unscheduleSelf(mUpdater);
