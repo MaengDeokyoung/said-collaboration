@@ -9,6 +9,7 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.view.ScrollingView;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ScrollerCompat;
+import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -26,7 +27,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 
 @CoordinatorLayout.DefaultBehavior(CollapsingBarLayout.BarScrollBehavior.class)
-public class CollapsingBarLayout extends FrameLayout {
+public class CollapsingBarLayout extends CardView {
 
     public CollapsingBarLayout(Context context) {
         super(context);
@@ -40,10 +41,10 @@ public class CollapsingBarLayout extends FrameLayout {
         super(context, attrs, defStyleAttr);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public CollapsingBarLayout(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-    }
+//    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+//    public CollapsingBarLayout(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+//        super(context, attrs, defStyleAttr, defStyleRes);
+//    }
 
     @Override
     protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
@@ -622,11 +623,17 @@ public class CollapsingBarLayout extends FrameLayout {
 
     public static class CollapsingBarScrollBehavior extends ViewOffsetBehavior {
 
+        int contentsOffset;
+
         public CollapsingBarScrollBehavior() {
         }
 
         public CollapsingBarScrollBehavior(Context context, AttributeSet attrs) {
             super(context, attrs);
+        }
+
+        public int getContentsOffset() {
+            return contentsOffset;
         }
 
         @Override
@@ -635,7 +642,7 @@ public class CollapsingBarLayout extends FrameLayout {
             CoordinatorLayout.Behavior behavior = ((CoordinatorLayout.LayoutParams)dependency.getLayoutParams()).getBehavior();
             if(behavior instanceof BarScrollBehavior) {
                 int headerOffset = ((BarScrollBehavior)behavior).getTopAndBottomOffset();
-                int contentsOffset = dependency.getHeight() + headerOffset;
+                contentsOffset = dependency.getHeight() + headerOffset;
                 setTopAndBottomOffset(contentsOffset, false);
             }
             return false;

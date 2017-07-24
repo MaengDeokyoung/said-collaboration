@@ -6,23 +6,33 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.landkid.said.R;
+import com.landkid.said.util.ViewUtils;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import jp.wasabeef.blurry.Blurry;
 
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link SearchFragment.OnFragmentInteractionListener} interface
+ * {@link OnSearchCompleteListener} interface
  * to handle interaction events.
  * Use the {@link SearchFragment#newInstance} factory method to
  * create an instance of this fragment.
@@ -33,17 +43,20 @@ public class SearchFragment extends Fragment {
     private static final String SEARCH_MODE = "SEARCH_MODE";
     private static final String CX = "CX";
     private static final String CY = "CY";
+    public static final String SEARCH_KEYWORD = "SEARCH_KEYWORD";
 
     // TODO: Rename and change types of parameters
     private String mSearchMode;
 
-    @BindView(R.id.ll_search_area) FrameLayout mLlSearchArea;
+    @BindView(R.id.ll_search_area) ConstraintLayout mLlSearchArea;
+    @BindView(R.id.et_search) EditText mEtSearch;
+    @BindView(R.id.search_button) ImageButton mBtSearch;
 
     int cx;
     int cy;
 
 
-    private OnFragmentInteractionListener mListener;
+    private OnSearchCompleteListener mListener;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -70,6 +83,7 @@ public class SearchFragment extends Fragment {
     }
 
     View mRootView;
+    InputMethodManager mInputMethodManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -80,6 +94,7 @@ public class SearchFragment extends Fragment {
 
         ButterKnife.bind(this, mRootView);
         mLlSearchArea.setVisibility(View.INVISIBLE);
+        mInputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
 
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -91,49 +106,105 @@ public class SearchFragment extends Fragment {
 
                 mLlSearchArea.setVisibility(View.VISIBLE);
                 anim.start();
+
+                mInputMethodManager.showSoftInput(mEtSearch, InputMethodManager.SHOW_IMPLICIT);
+
             }
         }, 300);
+
 
         mLlSearchArea.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+            completeSearch();
+            }
+        });
 
-                int initialRadius = Math.max(mLlSearchArea.getWidth(), mLlSearchArea.getHeight());
+        mEtSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
 
-                Animator anim = ViewAnimationUtils.createCircularReveal(mLlSearchArea, cx, cy, initialRadius, 0);
+                switch (i){
+                    case EditorInfo.IME_ACTION_DONE:
+                        search();
+                        return true;
+                }
 
-                anim.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        super.onAnimationEnd(animation);
-                        mLlSearchArea.setVisibility(View.INVISIBLE);
-                        getActivity().onBackPressed();
+                return false;
+            }
+        });
 
-                    }
-                });
+        mBtSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
-                anim.start();
+                search();
+            }
+        });
+
+        mLlSearchArea.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                // inset the toolbar down by the status bar height
+
+                mLlSearchArea.setPadding(
+                        insets.getSystemWindowInsetLeft(),
+                        insets.getSystemWindowInsetTop(),
+                        insets.getSystemWindowInsetRight(),
+                        0);
+
+                mLlSearchArea.setOnApplyWindowInsetsListener(null);
+
+                return insets.consumeSystemWindowInsets();
             }
         });
 
         return mRootView;
     }
 
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+    public void search(){
+        String keyword = mEtSearch.getText().toString();
+        if(!keyword.isEmpty()) {
+            Message message = new Message();
+            message.what = MainActivity.TO_SEARCH_RESULT;
+
+            Bundle bundle = new Bundle();
+            bundle.putString(SEARCH_KEYWORD, mEtSearch.getText().toString());
+            message.setData(bundle);
+
+            ((MainActivity) getContext()).transitionHandler.sendMessage(message);
+            completeSearch();
         }
+    }
+
+    public void completeSearch(){
+
+        int initialRadius = Math.max(mLlSearchArea.getWidth(), mLlSearchArea.getHeight());
+
+        Animator anim = ViewAnimationUtils.createCircularReveal(mLlSearchArea, cx, cy, initialRadius, 0);
+
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                mLlSearchArea.setVisibility(View.INVISIBLE);
+                mInputMethodManager.hideSoftInputFromWindow(mEtSearch.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+                getActivity().onBackPressed();
+            }
+        });
+
+        anim.start();
+
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-//        if (context instanceof OnFragmentInteractionListener) {
-//            mListener = (OnFragmentInteractionListener) context;
-//        } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnFragmentInteractionListener");
-//        }
+        if (context instanceof OnSearchCompleteListener) {
+            mListener = (OnSearchCompleteListener) context;
+        } else {
+            throw new RuntimeException(context.toString() + " must implement OnSearchCompleteListener");
+        }
     }
 
     @Override
@@ -152,9 +223,8 @@ public class SearchFragment extends Fragment {
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+    public interface OnSearchCompleteListener {
+        void onFragmentInteraction();
     }
 
     public void onBackPressed() {

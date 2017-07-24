@@ -22,6 +22,7 @@ public class ViewUtils {
     public static final int ANIM_DURATION_SCREEN_OUT = 200;
     private static int transitionDur = 300;
 
+
     public static int getViewWidth(View view) {
         WindowManager wm =
                 (WindowManager) view.getContext().getSystemService(Context.WINDOW_SERVICE);
@@ -119,5 +120,13 @@ public class ViewUtils {
                 return result;
             }
         }
+    }
+
+    public static float dp(float size, Context context){
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, context.getResources().getDisplayMetrics());
+    }
+
+    public static float sp(float size, Context context){
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, context.getResources().getDisplayMetrics());
     }
 }

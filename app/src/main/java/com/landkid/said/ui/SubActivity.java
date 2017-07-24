@@ -1,21 +1,21 @@
 package com.landkid.said.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.text.util.LinkifyCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
@@ -24,15 +24,16 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.style.ClickableSpan;
-import android.text.style.ForegroundColorSpan;
 import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -45,11 +46,11 @@ import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.landkid.said.R;
-import com.landkid.said.data.api.dribbble.DribbblePrefs;
+import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.Comment;
 import com.landkid.said.data.api.model.Like;
-import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.util.EaseOutElasticInterpolator;
 import com.landkid.said.util.ResourceUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -88,10 +89,19 @@ public class SubActivity extends AppCompatActivity {
     @BindView(R.id.designer_name) TextView designerName;
     @BindView(R.id.location) TextView location;
 
+    @BindView(R.id.sub_image_card) CardView imageCard;
     @BindView(R.id.sub_image) ImageView image;
     @BindView(R.id.fab_back) FloatingActionButton fabBack;
     @BindView(R.id.rv_comments) RecyclerView rvComments;
+    @BindView(R.id.response_count) TextView responseCount;
+    @BindView(R.id.scroll_area) LinearLayout scrollArea;
 
+    @BindView(R.id.sub_scroll_view) NestedScrollView subScrollView;
+    @BindView(R.id.iv_like) ImageView like;
+    @BindView(R.id.iv_liked) ImageView liked;
+    @BindView(R.id.fl_like_icon) FrameLayout likeIcon;
+
+    private DribbblePreferences dribbblePreferences;
 
     final Handler colorHandler = new Handler(){
 
@@ -109,6 +119,23 @@ public class SubActivity extends AppCompatActivity {
                 setSwatchColor(mutedDarkSwatch, colors[5], 5);
                 colorPalette.setVisibility(View.VISIBLE);
                 colorPalette.setAlpha(0);
+
+                int presentColor = 0xFFFFFFFF;
+                for(int color : colors){
+                    if(color != -1){
+                        presentColor = color;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            Window window = getWindow();
+                            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                            //window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                            window.setStatusBarColor(presentColor + 0xcc000000);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            }
+
+                        }
+                        break;
+                    }
+                }
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -117,6 +144,9 @@ public class SubActivity extends AppCompatActivity {
                                 .setInterpolator(new AccelerateInterpolator())
                                 .setDuration(200)
                                 .start();
+
+
+
                     }
                 }, 100);
             }
@@ -141,8 +171,10 @@ public class SubActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sub);
         ButterKnife.bind(this);
 
+        dribbblePreferences = DribbblePreferences.get(getApplicationContext());
+
         Intent intent = getIntent();
-        Shot shot = intent.getParcelableExtra(FeedAdapter.KEY_SHOT);
+        final Shot shot = intent.getParcelableExtra(FeedAdapter.KEY_SHOT);
 
         fabBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,20 +222,36 @@ public class SubActivity extends AppCompatActivity {
         designerName.setText(Html.fromHtml(shot.user.name));
         location.setText(shot.user.location);
 
+        if(shot.comments_count > 1) {
+            responseCount.setText(shot.comments_count + " Responses");
+        } else if(shot.comments_count == 1){
+            responseCount.setText(shot.comments_count + " Response");
+        } else if(shot.comments_count == 0){
+            responseCount.setText("No Response");
+
+        }
+
         setCommentsView();
 
-        final Call<List<Comment>> commentsCall = DribbblePrefs.get(getApplicationContext()).getApi().getComments(shot.id);
-        commentsCall.enqueue(new Callback<List<Comment>>() {
-            @Override
-            public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
-                ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
-            }
+        if(shot.comments_count > 0) {
 
-            @Override
-            public void onFailure(Call<List<Comment>> call, Throwable t) {
+            final Call<List<Comment>> commentsCall = dribbblePreferences.getApi().getComments(shot.id);
+            commentsCall.enqueue(new Callback<List<Comment>>() {
+                @Override
+                public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
+                    if(response.body() != null) {
+                        if (response.body().size() > 0) {
+                            ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
+                        }
+                    }
+                }
 
-            }
-        });
+                @Override
+                public void onFailure(Call<List<Comment>> call, Throwable t) {
+
+                }
+            });
+        }
 
         Glide.with(getApplicationContext())
                 .load(shot.user.avatar_url)
@@ -247,28 +295,194 @@ public class SubActivity extends AppCompatActivity {
                                 msg.setData(bundle);
                                 colorHandler.sendMessage(msg);
 
-                                if(vibrantSwatch != -1) {
-                                    if (Build.VERSION.SDK_INT >= 21) {
-                                        Window window = getWindow();
-                                        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                                        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-                                        window.setStatusBarColor(vibrantSwatch);
-                                    }
-                                }
-
                             }
                         }).start();
 
 
                     }
                 });
+
+        scrollArea.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+
+        scrollArea.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                // inset the toolbar down by the status bar height
+                ViewGroup.MarginLayoutParams lpToolbar = (ViewGroup.MarginLayoutParams) imageCard
+                        .getLayoutParams();
+                topMargin = insets.getSystemWindowInsetTop();
+                lpToolbar.topMargin += insets.getSystemWindowInsetTop();
+                lpToolbar.leftMargin += insets.getSystemWindowInsetLeft();
+                lpToolbar.rightMargin += insets.getSystemWindowInsetRight();
+                imageCard.setLayoutParams(lpToolbar);
+
+
+                // inset the fab for the navbar
+                ViewGroup.MarginLayoutParams lpFab = (ViewGroup.MarginLayoutParams) fabBack
+                        .getLayoutParams();
+                lpFab.bottomMargin += insets.getSystemWindowInsetBottom(); // portrait
+                lpFab.rightMargin += insets.getSystemWindowInsetRight(); // landscape
+                fabBack.setLayoutParams(lpFab);
+
+                scrollArea.setOnApplyWindowInsetsListener(null);
+
+                return insets.consumeSystemWindowInsets();
+            }
+        });
+
+
+        subScrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
+
+            boolean isAnimated;
+
+            @Override
+            public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                imageCard.setPivotX(imageCard.getMeasuredWidth() - 20 * getResources().getDisplayMetrics().density);
+                imageCard.setPivotY(20 * getResources().getDisplayMetrics().density);
+                if(!isAnimated) {
+                    if (scrollY > image.getMeasuredHeight()) {
+
+                        if(scrollY > oldScrollY) {
+
+                            imageCard.animate()
+                                    .scaleX(0.5f)
+                                    .scaleY(0.5f)
+                                    .setListener(new AnimatorListenerAdapter() {
+                                        @Override
+                                        public void onAnimationStart(Animator animation) {
+                                            super.onAnimationStart(animation);
+                                            isAnimated = true;
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationEnd(Animator animation) {
+                                            super.onAnimationEnd(animation);
+                                            isAnimated = false;
+
+                                        }
+                                    })
+                                    .setInterpolator(new DecelerateInterpolator())
+                                    .setDuration(300)
+                                    .start();
+                        }
+
+                    } else {
+
+                        if(scrollY < oldScrollY) {
+
+                            imageCard.animate()
+                                    .scaleX(1)
+                                    .scaleY(1)
+                                    .setListener(new AnimatorListenerAdapter() {
+                                        @Override
+                                        public void onAnimationStart(Animator animation) {
+                                            super.onAnimationStart(animation);
+                                            isAnimated = true;
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationEnd(Animator animation) {
+                                            super.onAnimationEnd(animation);
+                                            isAnimated = false;
+
+                                        }
+                                    })
+                                    .setInterpolator(new DecelerateInterpolator())
+                                    .setDuration(300)
+                                    .start();
+                        }
+                    }
+                }
+                if(scrollY > 0){
+                    imageCard.setCardElevation(8 * getResources().getDisplayMetrics().density);
+
+                } else {
+                    ObjectAnimator elevationAnimator = ObjectAnimator.ofFloat(imageCard, "cardElevation", 8 * getResources().getDisplayMetrics().density, 0);
+                    elevationAnimator.setDuration(300).start();
+                    //imageCard.setCardElevation(0);
+
+                }
+                imageCard.setTranslationY(scrollY);
+            }
+        });
+
+        liked.setScaleX(0);
+        liked.setScaleY(0);
+
+        final Call<Like> checkLikedCall = dribbblePreferences.getApi().checkLiked(shot.id);
+        checkLikedCall.enqueue(new Callback<Like>() {
+            @Override
+            public void onResponse(Call<Like> call, Response<Like> response) {
+                if(response.body() != null){
+                    liked.setScaleX(1);
+                    liked.setScaleY(1);
+                } else {
+                    liked.setScaleX(0);
+                    liked.setScaleY(0);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Like> call, Throwable t) {
+
+            }
+        });
+
+        like.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (liked.getScaleY() == 0) {
+                    doLike(shot, true);
+                    liked.setPivotX(liked.getWidth() / 2f);
+                    liked.setPivotY(liked.getHeight() / 1.2f);
+                    liked.animate()
+                            .scaleX(1)
+                            .scaleY(1)
+                            .setDuration(500)
+                            .setInterpolator(new DecelerateInterpolator())
+                            .start();
+
+                    likeIcon.animate()
+                            .setListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    likeIcon.animate()
+                                            .translationY(0)
+                                            .setInterpolator(new EaseOutElasticInterpolator())
+                                            .setDuration(1000)
+                                            .start();
+                                }
+                            })
+                            .translationY(ResourceUtils.dpToPx(10, getApplicationContext()))
+                            .setInterpolator(new DecelerateInterpolator())
+                            .setDuration(500)
+                            .start();
+
+                } else {
+                    doLike(shot, false);
+                    liked.setPivotX(liked.getWidth() / 2f);
+                    liked.setPivotY(liked.getHeight() / 1.2f);
+                    liked.animate()
+                            .scaleX(0)
+                            .scaleY(0)
+                            .setDuration(300)
+                            .start();
+                }
+            }
+        });
     }
+
+    int topMargin;
 
     void setCommentsView(){
         rvComments.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
         CommentsAdapter adapter = new CommentsAdapter(getApplicationContext());
         rvComments.setAdapter(adapter);
-        rvComments.setVerticalScrollBarEnabled(false);
+        rvComments.setNestedScrollingEnabled(false);
     }
 
     void setSwatchColor(CardView view, int swatch, int order){
@@ -283,12 +497,12 @@ public class SubActivity extends AppCompatActivity {
     private class CommentsAdapter extends RecyclerView.Adapter<CommentsViewHolder>{
 
         List<Comment> comments;
-        DribbblePrefs dribbblePrefs;
+        DribbblePreferences dribbblePreferences;
         Context mContext;
 
         CommentsAdapter(Context context) {
             this.comments = new ArrayList<>();
-            this.dribbblePrefs = DribbblePrefs.get(context);
+            this.dribbblePreferences = DribbblePreferences.get(context);
             this.mContext = context;
         }
 
@@ -299,14 +513,7 @@ public class SubActivity extends AppCompatActivity {
 
         public void addShots(List<Comment> comments) {
 
-//        int previousShotLength = shots.size();
-//        for (SaidItem shot : shots) {
-//            this.shots.add((Shot) shot);
-//        }
-//        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
-            for (Comment comment : comments) {
-                this.comments.add(comment);
-            }
+            this.comments.addAll(comments);
             notifyDataSetChanged();
         }
 
@@ -319,7 +526,7 @@ public class SubActivity extends AppCompatActivity {
         public void onBindViewHolder(CommentsViewHolder holder, int position) {
             Comment comment = comments.get(position);
             holder.userName.setText(comment.user.name);
-            holder.comment.setText(Html.fromHtml(comment.body.toString()));
+            holder.comment.setText(Html.fromHtml(comment.body));
 
             Glide.with(getApplicationContext())
                     .load(comment.user.avatar_url)
@@ -343,5 +550,53 @@ public class SubActivity extends AppCompatActivity {
             ButterKnife.bind(this, itemView);
         }
 
+    }
+
+    boolean performingLike = false;
+
+    void checkLike(Shot shot){
+        final Call<Like> likeCall = dribbblePreferences.getApi().checkLiked(shot.id);
+        likeCall.enqueue(new Callback<Like>() {
+            @Override
+            public void onResponse(Call<Like> call, Response<Like> response) {
+                performingLike = false;
+            }
+
+            @Override
+            public void onFailure(Call<Like> call, Throwable t) {
+                performingLike = false;
+            }
+        });
+    }
+
+    void doLike(Shot shot, boolean liked) {
+        performingLike = true;
+        if (liked) {
+            final Call<Like> likeCall = dribbblePreferences.getApi().like(shot.id);
+            likeCall.enqueue(new Callback<Like>() {
+                @Override
+                public void onResponse(Call<Like> call, Response<Like> response) {
+                    performingLike = false;
+                }
+
+                @Override
+                public void onFailure(Call<Like> call, Throwable t) {
+                    performingLike = false;
+                }
+            });
+        } else {
+            final Call<Void> unlikeCall = dribbblePreferences.getApi().unlike(shot.id);
+            unlikeCall.enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    performingLike = false;
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    performingLike = false;
+                }
+            });
+        }
     }
 }

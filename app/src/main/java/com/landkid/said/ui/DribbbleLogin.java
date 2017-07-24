@@ -19,27 +19,19 @@ package com.landkid.said.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.transition.TransitionManager;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.landkid.said.BuildConfig;
 import com.landkid.said.R;
 import com.landkid.said.data.api.dribbble.DribbbleAuthService;
-import com.landkid.said.data.api.dribbble.DribbblePrefs;
+import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.AccessToken;
-import com.landkid.said.data.api.model.User;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,14 +51,14 @@ public class DribbbleLogin extends Activity {
     @BindView(R.id.container) ViewGroup container;
     @BindView(R.id.login) Button login;
     @BindView(R.id.login_failed_message) TextView loginFailed;
-    DribbblePrefs dribbblePrefs;
+    DribbblePreferences dribbblePreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dribbble_login);
         ButterKnife.bind(this);
-        dribbblePrefs = DribbblePrefs.get(this);
+        dribbblePreferences = DribbblePreferences.get(this);
 
         if (savedInstanceState != null) {
             isLoginFailed = savedInstanceState.getBoolean(STATE_LOGIN_FAILED, false);
@@ -84,7 +76,7 @@ public class DribbbleLogin extends Activity {
 
     public void doLogin(View view) {
         showLoading();
-        dribbblePrefs.login(DribbbleLogin.this);
+        dribbblePreferences.login(DribbbleLogin.this);
     }
 
     public void dismiss(View view) {
@@ -111,12 +103,12 @@ public class DribbbleLogin extends Activity {
     }
 
 //    void showLoggedInUser() {
-//        final Call<User> authenticatedUser = dribbblePrefs.getApi().getAuthenticatedUser();
+//        final Call<User> authenticatedUser = dribbblePreferences.getApi().getAuthenticatedUser();
 //        authenticatedUser.enqueue(new Callback<User>() {
 //            @Override
 //            public void onResponse(Call<User> call, Response<User> response) {
 //                final User user = response.body();
-//                dribbblePrefs.setLoggedInUser(user);
+//                dribbblePreferences.setLoggedInUser(user);
 //                final Toast confirmLogin = new Toast(getApplicationContext());
 //                final View v = LayoutInflater.from(DribbbleLogin.this).inflate(R.layout
 //                        .toast_logged_in_confirmation, null, false);
@@ -155,7 +147,7 @@ public class DribbbleLogin extends Activity {
         if (intent != null
                 && intent.getData() != null
                 && !TextUtils.isEmpty(intent.getData().getAuthority())
-                && DribbblePrefs.LOGIN_CALLBACK.equals(intent.getData().getAuthority())) {
+                && DribbblePreferences.LOGIN_CALLBACK.equals(intent.getData().getAuthority())) {
             showLoading();
             getAccessToken(intent.getData().getQueryParameter("code"));
         }
@@ -180,7 +172,7 @@ public class DribbbleLogin extends Activity {
                     return;
                 }
                 isLoginFailed = false;
-                dribbblePrefs.setAccessToken(response.body().access_token);
+                dribbblePreferences.setAccessToken(response.body().access_token);
                 setResult(Activity.RESULT_OK);
                 finishAfterTransition();
             }

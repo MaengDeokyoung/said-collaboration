@@ -19,6 +19,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import com.landkid.said.R;
@@ -54,6 +55,14 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
     public OnOptionItemClickListener getOnOptionItemClickListener() {
         return mOnOptionItemClickListener;
+    }
+
+    public View getParentButton(){
+        return mParentButton;
+    }
+
+    public View [] getChildButtons(){
+        return mChildButtons;
     }
 
     public GooeyFloatingActionButton(Context context) {
@@ -101,7 +110,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
         mParentButton.setLayoutParams(parentLp);
         mParentButton.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.colorAccent, context.getTheme()));
         mParentButton.setRadius(parentCircleRadius);
-        mParentButton.setCardElevation(0 * getContext().getResources().getDisplayMetrics().density);
+        mParentButton.setCardElevation(8 * getContext().getResources().getDisplayMetrics().density);
 
         ImageView parentIcon = new ImageView(context);
         CardView.LayoutParams parentIconLP = new CardView.LayoutParams((int) (parentCircleRadius * 2 * 7 / 16.0f), (int) (parentCircleRadius * 2 * 7 / 16.0f));
@@ -187,6 +196,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
             childIcon.setImageDrawable(childDrawable[i]);
 
             childButton.addView(childIcon);
+            childButton.setVisibility(GONE);
 
 
             mChildButtons[i] = childButton;
@@ -240,6 +250,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
     public void expandAll(){
         setEnabled(false);
         float parentOffset = ((GooeyDrawable) mGooeyBackgrounds[0].getDrawable()).getTranslationOffset();
+
         expand(0, parentOffset);
     }
 
@@ -248,6 +259,7 @@ public class GooeyFloatingActionButton extends FrameLayout {
         final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position].getDrawable();
         gooeyDrawable.setDuration(200).start();
 
+        mChildButtons[position].setVisibility(VISIBLE);
         mChildButtons[position].animate()
                 .translationY(parentOffset + gooeyDrawable.getTranslationOffset() * position)
                 .setListener(new AnimatorListenerAdapter() {
@@ -303,10 +315,12 @@ public class GooeyFloatingActionButton extends FrameLayout {
                     @Override
                     public void onAnimationStart(Animator animation) {
                         if(position < childCount - 1) {
+                            mChildButtons[position + 1].setVisibility(GONE);
                             mGooeyBackgrounds[position + 1].setVisibility(GONE);
                         }
                         if(position > 0) {
                             mGooeyBackgrounds[position - 1].setVisibility(VISIBLE);
+                            mChildButtons[position - 1].setVisibility(VISIBLE);
                             final GooeyDrawable gooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position - 1].getDrawable();
                             gooeyDrawable.setDuration(150);
                             gooeyDrawable.reverse();
@@ -322,6 +336,8 @@ public class GooeyFloatingActionButton extends FrameLayout {
                         } else {
                             mParentButton.setEnabled(true);
                             mGooeyBackgrounds[position].setVisibility(GONE);
+                            mChildButtons[position].setVisibility(GONE);
+
                         }
                     }
                 })

@@ -26,13 +26,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.landkid.said.BuildConfig;
 import com.landkid.said.data.api.AuthInterceptor;
+import com.landkid.said.data.api.CachingControlInterceptor;
 import com.landkid.said.data.api.DenvelopingConverter;
 import com.landkid.said.data.api.model.User;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -40,7 +43,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 /**
  * Storing dribbble user state.
  */
-public class DribbblePrefs {
+public class DribbblePreferences {
 
     public static final String LOGIN_CALLBACK = "dribbble-auth-callback";
     public static final String LOGIN_URL = "https://dribbble.com/oauth/authorize?client_id="
@@ -48,16 +51,17 @@ public class DribbblePrefs {
             + "&redirect_uri=said%3A%2F%2F" + LOGIN_CALLBACK
             + "&scope=public+write+comment+upload";
     private static final String DRIBBBLE_PREF = "DRIBBBLE_PREF";
+
     private static final String KEY_ACCESS_TOKEN = "KEY_ACCESS_TOKEN";
     private static final String KEY_USER_ID = "KEY_USER_ID";
     private static final String KEY_USER_NAME = "KEY_USER_NAME";
     private static final String KEY_USER_USERNAME = "KEY_USER_USERNAME";
     private static final String KEY_USER_AVATAR = "KEY_USER_AVATAR";
     private static final String KEY_USER_TYPE = "KEY_USER_TYPE";
-    private static final List<String> CREATIVE_TYPES
-            = Arrays.asList(new String[] { "Player", "Team" });
 
-    private static volatile DribbblePrefs singleton;
+    private static final List<String> CREATIVE_TYPES = Arrays.asList(new String[] { "Player", "Team" });
+
+    private static volatile DribbblePreferences instance;
     private final SharedPreferences prefs;
 
     private String accessToken;
@@ -68,24 +72,24 @@ public class DribbblePrefs {
     private String userAvatar;
     private String userType;
     private DribbbleService api;
+    private DribbbleService apiWithCache;
     private List<DribbbleLoginStatusListener> loginStatusListeners;
 
-    public static DribbblePrefs get(Context context) {
-        if (singleton == null) {
-            synchronized (DribbblePrefs.class) {
-                singleton = new DribbblePrefs(context);
+    public static DribbblePreferences get(Context context) {
+        if (instance == null) {
+            synchronized (DribbblePreferences.class) {
+                instance = new DribbblePreferences(context);
             }
         }
-        return singleton;
+        return instance;
     }
 
-    private DribbblePrefs(Context context) {
-        prefs = context.getApplicationContext().getSharedPreferences(DRIBBBLE_PREF, Context
-                .MODE_PRIVATE);
+    private DribbblePreferences(Context context) {
+        prefs = context.getApplicationContext().getSharedPreferences(DRIBBBLE_PREF, Context.MODE_PRIVATE);
         accessToken = prefs.getString(KEY_ACCESS_TOKEN, null);
         isLoggedIn = !TextUtils.isEmpty(accessToken);
         if (isLoggedIn) {
-            userId = prefs.getLong(KEY_USER_ID, 0l);
+            userId = prefs.getLong(KEY_USER_ID, 0);
             userName = prefs.getString(KEY_USER_NAME, null);
             userUsername = prefs.getString(KEY_USER_USERNAME, null);
             userAvatar = prefs.getString(KEY_USER_AVATAR, null);
@@ -164,6 +168,11 @@ public class DribbblePrefs {
         return api;
     }
 
+    public DribbbleService getApiWithCache(Context context){
+        if (apiWithCache == null) createApiWithCache(context);
+        return apiWithCache;
+    }
+
     public void logout() {
         isLoggedIn = false;
         accessToken = null;
@@ -216,7 +225,30 @@ public class DribbblePrefs {
         }
     }
 
+    private void createApiWithCache(Context context) {
+        long SIZE_OF_CACHE = 10 * 1024 * 1024; // 10 MiB
+        Cache cache = new Cache(new File(context.getCacheDir(), "http"), SIZE_OF_CACHE);
+
+        final OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(new AuthInterceptor(getAccessToken()))
+                .cache(cache)
+                .addNetworkInterceptor(new CachingControlInterceptor(context))
+                .build();
+
+        final Gson gson = new GsonBuilder()
+                .setDateFormat(DribbbleService.DATE_FORMAT)
+                .create();
+        apiWithCache = new Retrofit.Builder()
+                .baseUrl(DribbbleService.ENDPOINT)
+                .client(client)
+                .addConverterFactory(new DenvelopingConverter(gson))
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build()
+                .create((DribbbleService.class));
+    }
+
     private void createApi() {
+
         final OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(new AuthInterceptor(getAccessToken()))
                 .build();

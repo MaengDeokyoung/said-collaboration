@@ -1,22 +1,14 @@
 package com.landkid.said.ui;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
-import android.support.v4.view.animation.FastOutSlowInInterpolator;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
@@ -24,32 +16,19 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.load.resource.gif.GifDrawable;
-import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
-import com.bumptech.glide.request.target.Target;
 import com.landkid.said.R;
-import com.landkid.said.data.api.dribbble.DribbblePrefs;
-import com.landkid.said.data.api.model.Like;
+import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.Shot;
-import com.landkid.said.util.FeedsScrollEvent;
-import com.landkid.said.util.ResourceUtils;
-import com.squareup.otto.Subscribe;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -60,9 +39,6 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 /**
  * Created by sds on 2017. 6. 5..
@@ -70,15 +46,15 @@ import retrofit2.Response;
 
 class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
-    static final String KEY_SHOT = "KEY_SHOT";
+    public static final String KEY_SHOT = "KEY_SHOT";
 
     List<Shot> shots;
-    DribbblePrefs dribbblePrefs;
+    DribbblePreferences dribbblePreferences;
     Context mContext;
 
     FeedAdapter(Context context) {
         this.shots = new ArrayList<>();
-        this.dribbblePrefs = DribbblePrefs.get(context);
+        this.dribbblePreferences = DribbblePreferences.get(context);
         this.mContext = context;
     }
 
@@ -103,6 +79,9 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
     @Override
     public void onViewRecycled(FeedViewHolder feedViewHolder) {
         super.onViewRecycled(feedViewHolder);
+        if(feedViewHolder instanceof ItemViewHolder) {
+            ((ItemViewHolder) feedViewHolder).isReady = false;
+        }
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
@@ -152,35 +131,38 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         holder.image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), SubActivity.class);
-                intent.putExtra(KEY_SHOT, shot);
+                if(holder.isReady) {
 
-//                ActivityOptionsCompat options = ActivityOptionsCompat.
-//                        makeSceneTransitionAnimation((Activity) mContext, holder.imageCard, ResourceUtils.getString(R.string.shared_image, mContext));
-                mContext.startActivity(intent);
-                //mContext.startActivity(intent);
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable(KEY_SHOT, shot);
+
+
+                    Message message = new Message();
+                    message.what = MainActivity.TO_SUB_ACTIVITY;
+                    message.setData(bundle);
+                    ((MainActivity) mContext).transitionHandler.sendMessage(message);
+
+
+
+                    //mContext.startActivity(intent);
+                }
             }
         });
-
-
 
         Glide.with(holder.itemView.getContext())
                 .load(shot.images.best())
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                .into(new GlideDrawableImageViewTarget(holder.image));
-
-        /*Glide.with(holder.itemView.getContext())
-                .load(shot.user.avatar_url)
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .override(100, 100)
-                .into(new GlideDrawableImageViewTarget(holder.profilePhoto));*/
+                .into(new GlideDrawableImageViewTarget(holder.image){
+                    @Override
+                    public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+                        super.onResourceReady(resource, animation);
+                        holder.isReady = true;
+                    }
+                });
 
         holder.likeCount.setText(shot.likes_count + "");
-        //holder.commentCount.setText(shot.comments_count + "");
         holder.viewCount.setText(shot.views_count + "");
-//        holder.info.setVisibility(View.GONE);
-//        holder.title.setText(shot.title);
 
         if(shot.created_at != null) {
             Date today = new Date();
@@ -196,175 +178,16 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
             holder.createAt.setVisibility(View.GONE);
         }
 
-
-
-//        if(shot.description != null) {
-//            holder.description.setText(Html.fromHtml(shot.description));
-//            //LinkifyCompat.addLinks(holder.description, Linkify.ALL);
-//        }
-//
-//        holder.image.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                holder.info.setVisibility(View.VISIBLE);
-//            }
-//        });
-//
-//        holder.info.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                holder.info.setVisibility(View.GONE);
-//            }
-//        });
-
-//        if(shot.animated){
-//            holder.gifIndicator.setVisibility(View.VISIBLE);
-//        } else {
-//            holder.gifIndicator.setVisibility(View.GONE);
-//        }
-
-//            ViewCompat.setScaleX(holder.itemView, 0.5f);
-//            ViewCompat.setScaleY(holder.itemView, 0.5f);
-//            holder.itemView.animate()
-//                    .scaleX(1)
-//                    .scaleY(1)
-//                    .setInterpolator(new AccelerateDecelerateInterpolator())
-//                    .setDuration(300)
-//                    .start();
-
-//            ViewCompat.setTranslationX(holder.itemView, ResourceUtils.dpToPx(-50, getApplicationContext()));
-//            new Handler().postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    holder.itemView.animate()
-//                            .translationX(0)
-//                            .setInterpolator(new AccelerateDecelerateInterpolator())
-//                            .setDuration(300)
-//                            .start();
-//                }
-//            }, 100);
-
         holder.share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new ShareDribbbleImageTask((Activity) holder.itemView.getContext(), shot).execute();
-            }
-        });
-
-        holder.liked.setScaleX(0);
-        holder.liked.setScaleY(0);
-
-        final Call<Like> likeCall = dribbblePrefs.getApi().checkLiked(shot.id);
-        likeCall.enqueue(new Callback<Like>() {
-            @Override
-            public void onResponse(Call<Like> call, Response<Like> response) {
-                if(response.body() != null){
-                    holder.liked.setScaleX(1);
-                    holder.liked.setScaleY(1);
-                } else {
-                    holder.liked.setScaleX(0);
-                    holder.liked.setScaleY(0);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Like> call, Throwable t) {
-
-            }
-        });
-
-
-        holder.like.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if(holder.liked.getScaleY() == 0) {
-                    doLike(shot, true);
-                    holder.liked.setPivotX(holder.liked.getWidth() / 2f);
-                    holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
-                    holder.liked.animate()
-                            .scaleX(1)
-                            .scaleY(1)
-                            .setDuration(500)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .start();
-
-                    holder.likeIcon.animate()
-                            .setListener(new AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    holder.likeIcon.animate()
-                                            .translationY(0)
-                                            .setInterpolator(new EaseOutElasticInterpolator())
-                                            .setDuration(1000)
-                                            .start();
-                                }
-                            })
-                            .translationY(ResourceUtils.dpToPx(10, holder.itemView.getContext()))
-                            .setInterpolator(new DecelerateInterpolator())
-                            .setDuration(500)
-                            .start();
-
-                } else {
-                    doLike(shot, false);
-                    holder.liked.setPivotX(holder.liked.getWidth() / 2f);
-                    holder.liked.setPivotY(holder.liked.getHeight() / 1.2f);
-                    holder.liked.animate()
-                            .scaleX(0)
-                            .scaleY(0)
-                            .setDuration(300)
-                            .start();
+                if(holder.isReady) {
+                    new ShareDribbbleImageTask((Activity) holder.itemView.getContext(), shot).execute();
                 }
             }
         });
     }
-    boolean performingLike = false;
 
-    void checkLike(Shot shot){
-        final Call<Like> likeCall = dribbblePrefs.getApi().checkLiked(shot.id);
-        likeCall.enqueue(new Callback<Like>() {
-            @Override
-            public void onResponse(Call<Like> call, Response<Like> response) {
-                performingLike = false;
-            }
-
-            @Override
-            public void onFailure(Call<Like> call, Throwable t) {
-                performingLike = false;
-            }
-        });
-    }
-
-    void doLike(Shot shot, boolean liked) {
-        performingLike = true;
-        if (liked) {
-            final Call<Like> likeCall = dribbblePrefs.getApi().like(shot.id);
-            likeCall.enqueue(new Callback<Like>() {
-                @Override
-                public void onResponse(Call<Like> call, Response<Like> response) {
-                    performingLike = false;
-                }
-
-                @Override
-                public void onFailure(Call<Like> call, Throwable t) {
-                    performingLike = false;
-                }
-            });
-        } else {
-            final Call<Void> unlikeCall = dribbblePrefs.getApi().unlike(shot.id);
-            unlikeCall.enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    performingLike = false;
-                }
-
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    performingLike = false;
-                }
-            });
-        }
-    }
 
     @Override
     public int getItemCount() {
@@ -385,8 +208,7 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         //@BindView(R.id.iv_profile_photo) ImageView profilePhoto;
         @BindView(R.id.tv_like_count) TextView likeCount;
         //@BindView(R.id.tv_reply_count) TextView commentCount;
-        @BindView(R.id.iv_like) ImageView like;
-        @BindView(R.id.iv_liked) ImageView liked;
+
         @BindView(R.id.tv_view_count) TextView viewCount;
         @BindView(R.id.ll_user_info_area) View userInfoArea;
         //@BindView(R.id.ll_info) LinearLayout info;
@@ -396,9 +218,10 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         //@BindView(R.id.cv_gif_indicator) FrameLayout gifIndicator;
         @BindView(R.id.pb_loading_image) View imageLoadingIndicator;
         @BindView(R.id.iv_share) ImageView share;
-        @BindView(R.id.fl_like_icon) FrameLayout likeIcon;
 
         @BindView(R.id.image_card) CardView imageCard;
+
+        boolean isReady = false;
 
         ItemViewHolder(View itemView) {
             super(itemView);
@@ -503,17 +326,6 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         }
     }
 
-    class EaseOutElasticInterpolator implements Interpolator {
 
-        @Override
-        public float getInterpolation(float input) {
-            float p = 0.3f;
-            float PI = (float) Math.PI;
-            float a = (float) Math.pow(2, -10 * input);
-            float b = (float) Math.sin((input - p / 4) * ( 2 * PI ) / p);
-
-            return a * b + 1;
-        }
-    }
 }
 

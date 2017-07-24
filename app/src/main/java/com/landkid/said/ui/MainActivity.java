@@ -1,13 +1,16 @@
 package com.landkid.said.ui;
 
+import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
-import android.graphics.drawable.Animatable;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.StringDef;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,8 +24,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -33,10 +36,12 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.ShotDataManager;
 import com.landkid.said.data.api.SearchDataManager;
-import com.landkid.said.data.api.dribbble.DribbblePrefs;
+import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.ui.widget.GooeyFloatingActionButton;
 import com.landkid.said.util.BusProvider;
+import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
 
@@ -48,11 +53,14 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SearchFragment.OnSearchCompleteListener{
 
 
     static final String MODE_POPULAR = "MODE_POPULAR";
     static final String MODE_SEARCH = "MODE_SEARCH";
+
+    static final String POPULAR_SHOTS_HEADER = "Popular Shots";
+    static final String SEARCH_HEADER_PREFIX = "Searched By: ";
 
     @Mode String mode = MODE_POPULAR;
 
@@ -63,8 +71,13 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.pb_loading) ProgressBar mPbLoading;
     @BindView(R.id.bt_login) Button mBtLogin;
     @BindView(R.id.fab_search) GooeyFloatingActionButton mFabSearch;
-    //@BindView(R.id.pb_loading) LottieAnimationView mPxbLoading;
-    //@BindView(R.id.tv_search_keyword) TextView mTvSearchKeyword;
+    @BindView(R.id.toolbar) Toolbar toolbar;
+    @BindView(R.id.collapsing_bar_layout) CollapsingBarLayout mCollapsingBarLayout;
+
+    @Override
+    public void onFragmentInteraction() {
+        mFragments.remove(0);
+    }
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
@@ -82,20 +95,26 @@ public class MainActivity extends AppCompatActivity {
 
     InfiniteScrollListener infiniteScrollListener;
 
-    void resetDataManager(){
+    void resetDataManager(String headerTitle){
         //mFeedAdapter.setShots(new ArrayList<Shot>());
         isModeChanging = true;
-        loadStarted();
-        if(shotDataManager != null)
+        loadStarted(headerTitle);
+        if(headerTitle.equals(POPULAR_SHOTS_HEADER)){
             shotDataManager.resetNextPageIndexes();
-        if(searchDataManager != null)
-            infiniteScrollListener.removeDataManager(searchDataManager);
+            infiniteScrollListener.setDataManager(shotDataManager);
+        } else if(headerTitle.startsWith(SEARCH_HEADER_PREFIX)){
+            shotDataManager.resetNextPageIndexes();
+            infiniteScrollListener.setDataManager(searchDataManager);
+        }
+
+        //if(searchDataManager != null)
     }
 
-    private void loadStarted() {
+    private void loadStarted(String headerTitle) {
         BaseDataManager.loadCancel();
         Shot shot = new Shot(0,null,null,0,0,null,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,false,null,null,null);
         shot.isHeaderItem = true;
+        shot.headerTitle = headerTitle;
         List<Shot> initShots = new ArrayList<>();
         initShots.add(0, shot);
         mFeedAdapter.setShots(initShots);
@@ -105,10 +124,9 @@ public class MainActivity extends AppCompatActivity {
     String mQuerySearched;
     String mPreviousQuerySearched;
 
-    void onSearchButtonClick(){
-        resetDataManager();
-        mQuerySearched = mEtSearch.getText().toString();
+    public void onSearchButtonClick(String keyword){
         //mTvSearchKeyword.setText(Html.fromHtml("Search by <a href=\"\"'>" + mQuerySearched + "</href>"));
+        mQuerySearched = keyword;
         searchDataManager = new SearchDataManager(getApplicationContext()) {
             @Override
             public void onDataLoaded(List<Shot> items) {
@@ -131,14 +149,13 @@ public class MainActivity extends AppCompatActivity {
                 mPbLoading.setVisibility(View.GONE);
             }
         };
-
-        infiniteScrollListener.addDataManager(searchDataManager);
+        resetDataManager(SEARCH_HEADER_PREFIX + keyword);
         searchDataManager.createDribbbleSearchApi();
         searchDataManager.search(mQuerySearched);
         drawer.closeDrawer(GravityCompat.END);
 
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(mEtSearch.getWindowToken(), 0);
+        //InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        //imm.hideSoftInputFromWindow(mEtSearch.getWindowToken(), 0);
     }
 
     void setSearchDataManager(){
@@ -147,29 +164,34 @@ public class MainActivity extends AppCompatActivity {
         mEtSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                onSearchButtonClick();
+                //onSearchButtonClick();
                 return false;
             }
         });
         mIvSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                onSearchButtonClick();
+                //onSearchButtonClick();
             }
 
         });
     }
 
+
+
     void setActionBarAndDrawer() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setPadding((int) (10 * getResources().getDisplayMetrics().density), 0, 0, 0);
         setSupportActionBar(toolbar);
+        //toolbar.setPadding((int) (10 * getResources().getDisplayMetrics().density), getStatusBarHeight(), 0, 0);
+
         ActionBar actionBar = getSupportActionBar();
         actionBar.setHomeAsUpIndicator(R.drawable.ic_logo);
         actionBar.setDisplayHomeAsUpEnabled(true);
+
         actionBar.setTitle("");
 
     }
+
+    public List<Fragment> mFragments;
 
     @Override
     public void onBackPressed() {
@@ -177,7 +199,12 @@ public class MainActivity extends AppCompatActivity {
         if (drawer.isDrawerOpen(GravityCompat.END)) {
             drawer.closeDrawer(GravityCompat.END);
         } else {
-            super.onBackPressed();
+            if(mFragments.size() > 0){
+                ((SearchFragment) mFragments.get(0)).completeSearch();
+                mFragments.remove(0);
+            } else {
+                super.onBackPressed();
+            }
         }
     }
 
@@ -198,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
         switch (id){
             case android.R.id.home:
                 if(mode != MODE_POPULAR) {
-                    resetDataManager();
+                    resetDataManager(POPULAR_SHOTS_HEADER);
                     shotDataManager.loadPopular();
                     //mTvSearchKeyword.setText(ResourceUtils.getString(R.string.popular, getApplicationContext()));
                 }
@@ -228,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
                     mode = MODE_POPULAR;
                     mFeedAdapter.addShots(items);
                     isModeChanging = false;
+
                 } else {
                     mFeedAdapter.addShots(items);
                 }
@@ -235,11 +263,11 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
-        loadStarted();
+        loadStarted(POPULAR_SHOTS_HEADER);
         shotDataManager.createApi();
         shotDataManager.loadPopular();
 
-        infiniteScrollListener = new InfiniteScrollListener((LinearLayoutManager) mRvFeeds.getLayoutManager()) {
+        infiniteScrollListener = new InfiniteScrollListener() {
             @Override
             public void onLoadMore() {
                 if(!isModeChanging) {
@@ -249,57 +277,15 @@ public class MainActivity extends AppCompatActivity {
                             shotDataManager.loadPopular();
                             break;
                         case MODE_SEARCH:
-                            searchDataManager.search(mEtSearch.getText().toString());
+                            searchDataManager.search(mQuerySearched);
                             break;
                     }
                 }
             }
         };
-        infiniteScrollListener.addDataManager(shotDataManager);
+        infiniteScrollListener.setDataManager(shotDataManager);
         mRvFeeds.addOnScrollListener(infiniteScrollListener);
-        mRvFeeds.addOnScrollListener(new RecyclerView.OnScrollListener() {
-
-            int newState;
-
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                this.newState = newState;
-                if(newState == RecyclerView.SCROLL_AXIS_NONE) {
-                    for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
-                        if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
-                            FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
-                            if (holder != null) {
-                                holder.imageCard.animate()
-                                        .translationY(0)
-                                        .setDuration(700)
-                                        .start();
-                            }
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if(this.newState != RecyclerView.SCROLL_STATE_IDLE) {
-                    for (int i = 0; i < mRvFeeds.getChildCount(); i++) {
-                        if (mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i)) instanceof FeedAdapter.ItemViewHolder) {
-                            FeedAdapter.ItemViewHolder holder = (FeedAdapter.ItemViewHolder) mRvFeeds.getChildViewHolder(mRvFeeds.getChildAt(i));
-                            if (holder != null) {
-                                if (dy > 0 && holder.imageCard.getTranslationY() <= 20)
-                                    holder.imageCard.setTranslationY(holder.imageCard.getTranslationY() + dy / 5.0f);
-
-                                if (dy < 0 && holder.imageCard.getTranslationY() >= -20)
-                                    holder.imageCard.setTranslationY(holder.imageCard.getTranslationY() + dy / 5.0f);
-
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        mRvFeeds.addOnScrollListener(new ParallaxScrollListener());
     }
 
     void showProgress(int gravity){
@@ -317,15 +303,71 @@ public class MainActivity extends AppCompatActivity {
                 .addBold(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-B.ttf"))
                 .addBoldItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-BI.ttf"))
                 .addItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-RI.ttf"));
-//                .addNormal(Typekit.createFromAsset(this, "fonts/RobotoMono-Regular.ttf"))
-//                .addBold(Typekit.createFromAsset(this, "fonts/RobotoMono-Bold.ttf"))
-//                .addBoldItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-BoldItalic.ttf"))
-//                .addItalic(Typekit.createFromAsset(this, "fonts/RobotoMono-Italic.ttf"));
 
         setContentView(R.layout.activity_main);
         BusProvider.getInstance().register(this);
         ButterKnife.bind(this);
         setActionBarAndDrawer();
+
+
+        final View homeBtn = toolbar.getChildAt(0);
+
+        homeBtn.setTranslationX(-200f);
+        homeBtn.setRotation(-360);
+
+        //TODO make home button animation
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+
+                homeBtn.animate()
+                        .translationX(0)
+                        .rotation(0)
+                        .setDuration(300)
+                        .start();
+            }
+        }, 1000);
+
+
+        drawer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+
+        drawer.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                // inset the toolbar down by the status bar height
+                ViewGroup.MarginLayoutParams lpToolbar = (ViewGroup.MarginLayoutParams) toolbar
+                        .getLayoutParams();
+                lpToolbar.topMargin += insets.getSystemWindowInsetTop();
+                lpToolbar.leftMargin += insets.getSystemWindowInsetLeft();
+                lpToolbar.rightMargin += insets.getSystemWindowInsetRight();
+                toolbar.setLayoutParams(lpToolbar);
+                toolbar.setPadding(
+                        0,
+                        0,
+                        (int) ViewUtils.dp(15, getApplicationContext()),
+                        0);
+
+                ViewGroup.MarginLayoutParams homeBtn = (ViewGroup.MarginLayoutParams) toolbar.getChildAt(0).getLayoutParams();
+                homeBtn.leftMargin += ViewUtils.dp(15, getApplicationContext());
+
+
+                // inset the fab for the navbar
+                ViewGroup.MarginLayoutParams lpFab = (ViewGroup.MarginLayoutParams) mFabSearch
+                        .getLayoutParams();
+                lpFab.bottomMargin += insets.getSystemWindowInsetBottom(); // portrait
+                lpFab.rightMargin += insets.getSystemWindowInsetRight(); // landscape
+                mFabSearch.setLayoutParams(lpFab);
+
+                // set for being not applied again.
+                drawer.setOnApplyWindowInsetsListener(null);
+
+                return insets.consumeSystemWindowInsets();
+            }
+        });
+
 
         LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false);
         mFeedAdapter = new FeedAdapter(this);
@@ -351,7 +393,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        dribbblePrefs = DribbblePrefs.get(getApplicationContext());
+        mRvFeeds.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                int scrollY = recyclerView.computeVerticalScrollOffset();
+                if(scrollY > 0){
+                    mCollapsingBarLayout.setCardElevation(ViewUtils.dp(4, getApplicationContext()));
+                } else {
+                    mCollapsingBarLayout.setCardElevation(ViewUtils.dp(0, getApplicationContext()));
+                }
+            }
+        });
+
+        dribbblePreferences = DribbblePreferences.get(getApplicationContext());
 
         mBtLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -371,27 +430,14 @@ public class MainActivity extends AppCompatActivity {
                         int cx = (int) (view.getX() + view.getWidth() / 2 + mFabSearch.getX());
                         int cy = (int) (view.getY() + view.getHeight() / 2 + mFabSearch.getY());
 
-                        //mFabSearch.setEnabled(false);
-                        //mFabSearch.collapseAll();
-
-                        float toTranslationY = - mFabSearch.getY()
-                                - mFabSearch.getMeasuredHeight() +
-                                (mFabSearch.getParentCircleRadius()) * 2 +
-                                ((ViewGroup.MarginLayoutParams)mFabSearch.getLayoutParams()).getMarginEnd();
-
-                        mFabSearch.animate()
-                                .translationY(toTranslationY)
-                                .setInterpolator(new FastOutSlowInInterpolator())
-                                .setStartDelay(300)
-                                .setDuration(300)
-                                .start();
-
                         SearchFragment searchFragment = SearchFragment.newInstance("TEXT", cx, cy);
                         getSupportFragmentManager()
                                 .beginTransaction()
                                 .addToBackStack(null)
                                 .replace(R.id.search_fragment, searchFragment)
                                 .commit();
+
+                        mFragments.add(searchFragment);
 
                         return true;
 
@@ -403,12 +449,50 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mFragments = new ArrayList<>();
+
     }
-    DribbblePrefs dribbblePrefs;
+    DribbblePreferences dribbblePreferences;
 
     @Override
     protected void onDestroy() {
         BusProvider.getInstance().unregister(this);
         super.onDestroy();
     }
+
+    public static final int TO_SUB_ACTIVITY = 1 << 2;
+    public static final int TO_SEARCH_RESULT = 1 << 3;
+
+    final Handler transitionHandler = new Handler(){
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Bundle data;
+            switch (msg.what){
+                case TO_SUB_ACTIVITY:
+                    data = msg.getData();
+
+                    Intent intent = new Intent(getApplicationContext(), SubActivity.class);
+                    intent.putExtra(FeedAdapter.KEY_SHOT, data.getParcelable(FeedAdapter.KEY_SHOT));
+
+                    mFabSearch.getParentButton().setTransitionName(getString(R.string.feed_detail));
+
+                    ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, mFabSearch.getParentButton(),
+                            getString(R.string.feed_detail));
+                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
+                    break;
+                case TO_SEARCH_RESULT:
+
+                    data = msg.getData();
+
+                    onSearchButtonClick(data.getString(SearchFragment.SEARCH_KEYWORD));
+                    break;
+            }
+        }
+    };
+
+    void startSharedElementTransition(){
+    }
+
 }

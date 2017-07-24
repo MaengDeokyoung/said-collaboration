@@ -35,35 +35,24 @@ public abstract class InfiniteScrollListener extends RecyclerView.OnScrollListen
 
     // The minimum number of items remaining before we should loading more.
     private static final int VISIBLE_THRESHOLD = 5;
+//    private ArrayList<BaseDataManager> dataManagers;
+    private BaseDataManager dataManager;
 
-    private final LinearLayoutManager layoutManager;
-    private ArrayList<BaseDataManager> dataManagers;
-
-//    private final ShotDataManager dataLoading;
-//    private final SearchDataManager searchDataLoading;
-
-
-//    public InfiniteScrollListener(@NonNull LinearLayoutManager layoutManager,
-//                                  @NonNull ShotDataManager dataLoading,
-//                                  @NonNull SearchDataManager searchDataManager) {
-//        this.layoutManager = layoutManager;
-//        this.dataLoading = dataLoading;
-//        this.searchDataLoading = searchDataManager;
+    public InfiniteScrollListener() {
 //        dataManagers = new ArrayList<>();
+    }
+
+    public void setDataManager(BaseDataManager dataManager){
+        this.dataManager = dataManager;
+    }
+
+//    public void addDataManager(BaseDataManager dataManager){
+//        dataManagers.add(dataManager);
 //    }
 
-    public InfiniteScrollListener(@NonNull LinearLayoutManager layoutManager) {
-        this.layoutManager = layoutManager;
-        dataManagers = new ArrayList<>();
-    }
-
-    public void addDataManager(BaseDataManager dataManager){
-        dataManagers.add(dataManager);
-    }
-
-    public void removeDataManager(BaseDataManager dataManager){
-        dataManagers.remove(dataManager);
-    }
+//    public void removeDataManager(BaseDataManager dataManager){
+//        dataManagers.remove(dataManager);
+//    }
 
     @Override
     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -71,11 +60,15 @@ public abstract class InfiniteScrollListener extends RecyclerView.OnScrollListen
         //if (dy < 0 || dataLoading.isDataLoading() || (searchDataLoading != null && searchDataLoading.isDataLoading())) return;
         if (dy < 0)
             return;
-        for (BaseDataManager dataManager : dataManagers) {
-            if (dataManager.isDataLoading())
-                return;
-        }
+        if (dataManager == null || dataManager.isDataLoading())
+            return;
 
+//        for (BaseDataManager dataManager : dataManagers) {
+//            if (dataManager.isDataLoading())
+//                return;
+//        }
+
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
 
         final int visibleItemCount = recyclerView.getChildCount();
         final int totalItemCount = layoutManager.getItemCount();
