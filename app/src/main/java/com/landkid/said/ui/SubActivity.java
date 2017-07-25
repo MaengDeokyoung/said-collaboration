@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,7 +24,6 @@ import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.SpannableStringBuilder;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,7 +69,7 @@ import retrofit2.Response;
  * Created by landkid on 2017. 6. 18..
  */
 
-public class SubActivity extends AppCompatActivity {
+public class SubActivity extends AppCompatActivity implements View.OnClickListener {
 
     @BindView(R.id.v_muted_dark_swatch) CardView mutedDarkSwatch;
     @BindView(R.id.v_muted_light_swatch) CardView mutedLightSwatch;
@@ -107,50 +107,41 @@ public class SubActivity extends AppCompatActivity {
     private DribbblePreferences dribbblePreferences;
     private boolean performingLike = false;
 
-
     final Handler colorHandler = new Handler(){
 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            if(msg.getData().containsKey("colors")) {
-                int [] colors = msg.getData().getIntArray("colors");
+            if(msg.getData().containsKey(getString(R.string.swatch_colors_key))) {
+                int [] colors = msg.getData().getIntArray(getString(R.string.swatch_colors_key));
+                if(colors != null) {
+                    setSwatchColor(vibrantSwatch, colors[0]);
+                    setSwatchColor(vibrantLightSwatch, colors[1]);
+                    setSwatchColor(vibrantDarkSwatch, colors[2]);
+                    setSwatchColor(mutedSwatch, colors[3]);
+                    setSwatchColor(mutedLightSwatch, colors[4]);
+                    setSwatchColor(mutedDarkSwatch, colors[5]);
 
-                setSwatchColor(vibrantSwatch, colors[0], 0);
-                setSwatchColor(vibrantLightSwatch, colors[1], 1);
-                setSwatchColor(vibrantDarkSwatch, colors[2], 2);
-                setSwatchColor(mutedSwatch, colors[3], 3);
-                setSwatchColor(mutedLightSwatch, colors[4], 4);
-                setSwatchColor(mutedDarkSwatch, colors[5], 5);
-                colorPalette.setVisibility(View.VISIBLE);
-                colorPalette.setAlpha(0);
-
-                for(int color : colors){
-                    if(color != -1){
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            Window window = getWindow();
-                            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                            window.setStatusBarColor(color + 0xcc000000);
-//                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                            }
-
+                    for (int color : colors) {
+                        if (color != -1) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                Window window = getWindow();
+                                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                                window.setStatusBarColor(color + 0xcc000000);
+                            }
+                            break;
                         }
-                        break;
                     }
+
+                    colorPalette.setVisibility(View.VISIBLE);
+                    colorPalette.setAlpha(0);
+                    colorPalette.animate()
+                            .alpha(1)
+                            .setInterpolator(new AccelerateInterpolator())
+                            .setDuration(200)
+                            .setStartDelay(100)
+                            .start();
                 }
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        colorPalette.animate()
-                                .alpha(1)
-                                .setInterpolator(new AccelerateInterpolator())
-                                .setDuration(200)
-                                .start();
-
-
-
-                    }
-                }, 100);
             }
         }
     };
@@ -283,27 +274,11 @@ public class SubActivity extends AppCompatActivity {
         title.setText(shot.title);
 
         if(shot.description != null) {
-
-            int[][] states = new int[][] {
-                    new int[] { android.R.attr.state_pressed}, // enabled
-                    new int[] {}, // disabled
-            };
-
-            int[] colors = new int[] {
-                    ResourcesCompat.getColor(getResources(), R.color.colorHeartFilled, getTheme()),
-                    ResourcesCompat.getColor(getResources(), R.color.colorHeartFilled, getTheme())
-            };
-
-            final ColorStateList linkTextColor = new ColorStateList(states, colors);
-
-            HtmlUtils.setTextWithNiceLinks(description, HtmlUtils.parseHtml(shot.description,
+            description.setVisibility(View.VISIBLE);
+            HtmlUtils.setTextWithLinks(description, HtmlUtils.parseHtml(shot.description,
                     ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
                     ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
-//            description.setText(HtmlUtils.parseHtml(shot.description,
-//                    ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
-//                    ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
-//            LinkifyCompat.addLinks(description, Linkify.ALL);
-            description.setLinkTextColor(linkTextColor);
+
         } else {
             description.setVisibility(View.GONE);
         }
@@ -311,20 +286,9 @@ public class SubActivity extends AppCompatActivity {
         if(shot.tags != null && shot.tags.size() > 0) {
             tags.setVisibility(View.VISIBLE);
             tagsTitle.setVisibility(View.VISIBLE);
-            SpannableStringBuilder tagsSpannableStr = new SpannableStringBuilder();
-            for(String tag : shot.tags){
-                tagsSpannableStr.append("<a href=\"https://dribbble.com/");
-                tagsSpannableStr.append(shot.user.username);
-                tagsSpannableStr.append("/tags/");
-                tagsSpannableStr.append(tag);
-                tagsSpannableStr.append("\">");
-                tagsSpannableStr.append("#");
-                tagsSpannableStr.append(tag);
-                tagsSpannableStr.append("</a>&nbsp");
 
-            }
-
-            HtmlUtils.setTextWithNiceLinks(tags, HtmlUtils.parseHtml(tagsSpannableStr.toString(),
+            HtmlUtils.setTextWithLinks(tags,
+                    HtmlUtils.parseHtml(shot.getParsedTags(),
                     ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
                     ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
         } else {
@@ -344,18 +308,15 @@ public class SubActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
                     int commentCount = response.body() != null ? response.body().size() : 0;
-                    if (commentCount > 0) {
+                    if (commentCount > 0)
                         ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
-                    }
 
-                    if(commentCount > 1) {
+                    if(commentCount > 1)
                         responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
-                    } else if(shot.comments_count == 1){
+                     else if(shot.comments_count == 1)
                         responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
-                    } else if(commentCount == 0){
+                     else if(commentCount == 0)
                         responseCount.setText(getString(R.string.no_response));
-
-                    }
                 }
 
                 @Override
@@ -378,39 +339,7 @@ public class SubActivity extends AppCompatActivity {
                     @Override
                     public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
                         super.onResourceReady(resource, animation);
-
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Bitmap bitmap;
-                                if(!(resource instanceof GifDrawable)) {
-                                    bitmap = ((GlideBitmapDrawable) resource.getCurrent()).getBitmap();
-                                }else {
-                                    GifDrawable gifDrawable = (GifDrawable) resource;
-                                    bitmap = gifDrawable.getFirstFrame();
-                                }
-
-                                Palette palette = Palette.from(bitmap).generate();
-
-                                int vibrantSwatch = palette.getVibrantColor(-1);
-                                int vibrantLightSwatch = palette.getLightVibrantColor(-1);
-                                int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
-                                int mutedSwatch = palette.getMutedColor(-1);
-                                int mutedLightSwatch = palette.getLightMutedColor(-1);
-                                int mutedDarkSwatch = palette.getDarkMutedColor(-1);
-
-                                int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
-
-                                Message msg = new Message();
-                                Bundle bundle = new Bundle();
-                                bundle.putIntArray("colors", colors);
-                                msg.setData(bundle);
-                                colorHandler.sendMessage(msg);
-
-                            }
-                        }).start();
-
-
+                        new Thread(new StatusBarColorChangeRunnable(resource)).start();
                     }
                 });
 
@@ -439,48 +368,54 @@ public class SubActivity extends AppCompatActivity {
         like.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (liked.getScaleY() == 0) {
-                    doLike(shot, true);
-                    liked.setPivotX(liked.getWidth() / 2f);
-                    liked.setPivotY(liked.getHeight() / 1.2f);
-                    liked.animate()
-                            .scaleX(1)
-                            .scaleY(1)
-                            .setDuration(500)
-                            .setInterpolator(new DecelerateInterpolator())
-                            .start();
-
-                    likeIcon.animate()
-                            .setListener(new AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    likeIcon.animate()
-                                            .translationY(0)
-                                            .setInterpolator(new EaseOutElasticInterpolator())
-                                            .setDuration(1000)
-                                            .start();
-                                }
-                            })
-                            .translationY(ResourceUtils.dpToPx(10, getApplicationContext()))
-                            .setInterpolator(new DecelerateInterpolator())
-                            .setDuration(500)
-                            .start();
-
-                } else {
-                    doLike(shot, false);
-                    liked.setPivotX(liked.getWidth() / 2f);
-                    liked.setPivotY(liked.getHeight() / 1.2f);
-                    liked.animate()
-                            .scaleX(0)
-                            .scaleY(0)
-                            .setDuration(300)
-                            .start();
-                }
+                animateHeartFill(shot);
             }
         });
     }
 
     int topMargin;
+
+    void animateHeartFill(Shot shot){
+        if(!performingLike) {
+            if (liked.getScaleY() == 0) {
+                doLike(shot, true);
+                liked.setPivotX(liked.getWidth() / 2f);
+                liked.setPivotY(liked.getHeight() / 1.2f);
+                liked.animate()
+                        .scaleX(1)
+                        .scaleY(1)
+                        .setDuration(500)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .start();
+
+                likeIcon.animate()
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                likeIcon.animate()
+                                        .translationY(0)
+                                        .setInterpolator(new EaseOutElasticInterpolator())
+                                        .setDuration(1000)
+                                        .start();
+                            }
+                        })
+                        .translationY(ResourceUtils.dpToPx(10, getApplicationContext()))
+                        .setInterpolator(new DecelerateInterpolator())
+                        .setDuration(500)
+                        .start();
+
+            } else {
+                doLike(shot, false);
+                liked.setPivotX(liked.getWidth() / 2f);
+                liked.setPivotY(liked.getHeight() / 1.2f);
+                liked.animate()
+                        .scaleX(0)
+                        .scaleY(0)
+                        .setDuration(300)
+                        .start();
+            }
+        }
+    }
 
     void setCommentsView(){
         rvComments.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
@@ -489,7 +424,7 @@ public class SubActivity extends AppCompatActivity {
         rvComments.setNestedScrollingEnabled(false);
     }
 
-    void setSwatchColor(CardView view, final int swatch, int order){
+    void setSwatchColor(CardView view, final int swatch){
         if(swatch != -1) {
             view.setCardBackgroundColor(swatch);
             view.setVisibility(View.VISIBLE);
@@ -508,6 +443,11 @@ public class SubActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onClick(View view) {
+
+    }
+
     private class CommentsAdapter extends RecyclerView.Adapter<CommentsViewHolder>{
 
         List<Comment> comments;
@@ -520,13 +460,12 @@ public class SubActivity extends AppCompatActivity {
             this.mContext = context;
         }
 
-        public void setComments(List<Comment> comments){
+        private void setComments(List<Comment> comments){
             this.comments = comments;
             notifyDataSetChanged();
         }
 
         public void addShots(List<Comment> comments) {
-
             this.comments.addAll(comments);
             notifyDataSetChanged();
         }
@@ -542,11 +481,9 @@ public class SubActivity extends AppCompatActivity {
             Comment comment = comments.get(position);
             holder.userName.setText(comment.user.name);
 
-            HtmlUtils.setTextWithNiceLinks(holder.comment, HtmlUtils.parseHtml(comment.body,
+            HtmlUtils.setTextWithLinks(holder.comment, HtmlUtils.parseHtml(comment.body,
                     ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
                     ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
-
-            //holder.comment.setText(Html.fromHtml(comment.body));
 
             Glide.with(getApplicationContext())
                     .load(comment.user.avatar_url)
@@ -580,7 +517,8 @@ public class SubActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Like> call, Response<Like> response) {
                     performingLike = false;
-                    likeCount.setText((Integer.parseInt(likeCount.getText().toString()) + 1) + "");
+                    int currentCount = Integer.parseInt(likeCount.getText().toString());
+                    likeCount.setText(String.format(getString(R.string.number), currentCount + 1));
                 }
 
                 @Override
@@ -594,7 +532,8 @@ public class SubActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     performingLike = false;
-                    likeCount.setText((Integer.parseInt(likeCount.getText().toString()) - 1) + "");
+                    int currentCount = Integer.parseInt(likeCount.getText().toString());
+                    likeCount.setText(String.format(getString(R.string.number), currentCount - 1));
                 }
 
                 @Override
@@ -602,6 +541,44 @@ public class SubActivity extends AppCompatActivity {
                     performingLike = false;
                 }
             });
+        }
+    }
+
+    private class StatusBarColorChangeRunnable implements Runnable {
+
+        private GlideDrawable resource;
+
+        private StatusBarColorChangeRunnable(GlideDrawable resource){
+            this.resource = resource;
+        }
+
+        @Override
+        public void run() {
+
+            Bitmap bitmap;
+            if(!(resource instanceof GifDrawable)) {
+                bitmap = ((GlideBitmapDrawable) resource.getCurrent()).getBitmap();
+            }else {
+                GifDrawable gifDrawable = (GifDrawable) resource;
+                bitmap = gifDrawable.getFirstFrame();
+            }
+
+            Palette palette = Palette.from(bitmap).generate();
+
+            int vibrantSwatch = palette.getVibrantColor(-1);
+            int vibrantLightSwatch = palette.getLightVibrantColor(-1);
+            int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
+            int mutedSwatch = palette.getMutedColor(-1);
+            int mutedLightSwatch = palette.getLightMutedColor(-1);
+            int mutedDarkSwatch = palette.getDarkMutedColor(-1);
+
+            int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
+
+            Message msg = new Message();
+            Bundle bundle = new Bundle();
+            bundle.putIntArray(getString(R.string.swatch_colors_key), colors);
+            msg.setData(bundle);
+            colorHandler.sendMessage(msg);
         }
     }
 }

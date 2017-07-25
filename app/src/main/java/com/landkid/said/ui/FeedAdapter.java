@@ -44,7 +44,7 @@ import butterknife.ButterKnife;
  * Created by sds on 2017. 6. 5..
  */
 
-class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
+public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
     public static final String KEY_SHOT = "KEY_SHOT";
 
@@ -188,7 +188,6 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         });
     }
 
-
     @Override
     public int getItemCount() {
         return shots.size();
@@ -200,22 +199,14 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         }
     }
 
-    static class ItemViewHolder extends FeedViewHolder {
+    public static class ItemViewHolder extends FeedViewHolder {
 
         @BindView(R.id.tv_username) TextView username;
-        //@BindView(R.id.iv_image) ImageView image;
         @BindView(R.id.iv_image) ImageView image;
-        //@BindView(R.id.iv_profile_photo) ImageView profilePhoto;
         @BindView(R.id.tv_like_count) TextView likeCount;
-        //@BindView(R.id.tv_reply_count) TextView commentCount;
-
         @BindView(R.id.tv_view_count) TextView viewCount;
         @BindView(R.id.ll_user_info_area) View userInfoArea;
-        //@BindView(R.id.ll_info) LinearLayout info;
-        //@BindView(R.id.tv_title) TextView title;
-        //@BindView(R.id.tv_description) TextView description;
         @BindView(R.id.tv_date) TextView createAt;
-        //@BindView(R.id.cv_gif_indicator) FrameLayout gifIndicator;
         @BindView(R.id.pb_loading_image) View imageLoadingIndicator;
         @BindView(R.id.iv_share) ImageView share;
 
@@ -226,6 +217,10 @@ class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
         ItemViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
+        }
+
+        public CardView getImageCard(){
+            return imageCard;
         }
 
     }

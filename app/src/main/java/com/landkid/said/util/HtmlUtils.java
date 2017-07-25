@@ -21,7 +21,7 @@ public class HtmlUtils {
 
     private HtmlUtils() { }
 
-    public static void setTextWithNiceLinks(TextView textView, CharSequence input) {
+    public static void setTextWithLinks(TextView textView, CharSequence input) {
         textView.setText(input);
         textView.setMovementMethod(LinkTouchMovementMethod.getInstance());
         textView.setFocusable(false);

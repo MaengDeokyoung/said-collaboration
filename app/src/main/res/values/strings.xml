@@ -16,5 +16,6 @@
     <string name="number">%d</string>
     <string name="tags">TAGS</string>
     <string name="colors">COLORS</string>
+    <string name="swatch_colors_key">swatch_colors_key</string>
 
 </resources>

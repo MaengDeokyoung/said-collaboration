@@ -46,14 +46,6 @@ public abstract class InfiniteScrollListener extends RecyclerView.OnScrollListen
         this.dataManager = dataManager;
     }
 
-//    public void addDataManager(BaseDataManager dataManager){
-//        dataManagers.add(dataManager);
-//    }
-
-//    public void removeDataManager(BaseDataManager dataManager){
-//        dataManagers.remove(dataManager);
-//    }
-
     @Override
     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
         // bail out if scrolling upward or already loading data
@@ -62,11 +54,6 @@ public abstract class InfiniteScrollListener extends RecyclerView.OnScrollListen
             return;
         if (dataManager == null || dataManager.isDataLoading())
             return;
-
-//        for (BaseDataManager dataManager : dataManagers) {
-//            if (dataManager.isDataLoading())
-//                return;
-//        }
 
         LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
 

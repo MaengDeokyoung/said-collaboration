@@ -59,8 +59,8 @@
                             <ImageView
                                 android:id="@+id/iv_liked"
                                 android:layout_gravity="center"
-                                android:layout_width="26dp"
-                                android:layout_height="26dp"
+                                android:layout_width="25dp"
+                                android:layout_height="25dp"
                                 android:layout_marginTop="2dp"
                                 app:srcCompat="@drawable/ic_liked"/>
 
@@ -323,7 +323,6 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
                 android:background="#dbdceb" />

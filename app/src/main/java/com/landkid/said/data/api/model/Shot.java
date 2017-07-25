@@ -16,9 +16,17 @@
 
 package com.landkid.said.data.api.model;
 
+import android.content.res.ColorStateList;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.ColorInt;
+import android.support.v4.content.ContextCompat;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+
+import com.landkid.said.R;
+import com.landkid.said.util.HtmlUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -157,6 +165,21 @@ public class Shot extends SaidItem implements Parcelable {
 //        }
 //        return parsedDescription;
 //    }
+
+    public String getParsedTags(){
+        SpannableStringBuilder tagsSpannableStr = new SpannableStringBuilder();
+        for(String tag : tags){
+            tagsSpannableStr.append("<a href=\"https://dribbble.com/");
+            tagsSpannableStr.append(user.username);
+            tagsSpannableStr.append("/tags/");
+            tagsSpannableStr.append(tag);
+            tagsSpannableStr.append("\">");
+            tagsSpannableStr.append("#");
+            tagsSpannableStr.append(tag);
+            tagsSpannableStr.append("</a>&nbsp;&nbsp;");
+        }
+        return tagsSpannableStr.toString();
+    }
 
     public static class Builder {
         private long id;
