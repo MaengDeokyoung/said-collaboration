@@ -3,10 +3,13 @@ package com.landkid.said.ui;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,6 +28,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -102,6 +106,8 @@ public class SubActivity extends AppCompatActivity {
     @BindView(R.id.iv_like) ImageView like;
     @BindView(R.id.iv_liked) ImageView liked;
     @BindView(R.id.fl_like_icon) FrameLayout likeIcon;
+    @BindView(R.id.tags) TextView tags;
+    @BindView(R.id.tags_title) TextView tagsTitle;
 
     private DribbblePreferences dribbblePreferences;
     private boolean performingLike = false;
@@ -126,11 +132,10 @@ public class SubActivity extends AppCompatActivity {
 
                 for(int color : colors){
                     if(color != -1){
-                        int presentColor = color;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             Window window = getWindow();
                             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                            window.setStatusBarColor(presentColor + 0xcc000000);
+                            window.setStatusBarColor(color + 0xcc000000);
 //                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //                            }
 
@@ -193,14 +198,15 @@ public class SubActivity extends AppCompatActivity {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
                 // inset the toolbar down by the status bar height
-                ViewGroup.MarginLayoutParams lpToolbar = (ViewGroup.MarginLayoutParams) imageCard
+                ViewGroup.MarginLayoutParams lpImageCard = (ViewGroup.MarginLayoutParams) imageCard
                         .getLayoutParams();
                 topMargin = insets.getSystemWindowInsetTop();
-                lpToolbar.topMargin += insets.getSystemWindowInsetTop();
-                lpToolbar.leftMargin += insets.getSystemWindowInsetLeft();
-                lpToolbar.rightMargin += insets.getSystemWindowInsetRight();
-                imageCard.setLayoutParams(lpToolbar);
+                lpImageCard.topMargin += insets.getSystemWindowInsetTop();
+                lpImageCard.leftMargin += insets.getSystemWindowInsetLeft();
+                lpImageCard.rightMargin += insets.getSystemWindowInsetRight();
+                imageCard.setLayoutParams(lpImageCard);
 
+                scrollArea.setPadding(0, 0, 0, scrollArea.getPaddingBottom() + insets.getSystemWindowInsetBottom());
                 // inset the fab for the navbar
                 ViewGroup.MarginLayoutParams lpFab = (ViewGroup.MarginLayoutParams) fabBack
                         .getLayoutParams();
@@ -215,97 +221,66 @@ public class SubActivity extends AppCompatActivity {
         });
 
 
-        subScrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
+        subScrollView.setOnScrollChangeListener(new SubScrollListener(getApplicationContext(), imageCard));
 
-            boolean isAnimated;
-
-            @Override
-            public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                imageCard.setPivotX(imageCard.getMeasuredWidth() - 20 * getResources().getDisplayMetrics().density);
-                imageCard.setPivotY(20 * getResources().getDisplayMetrics().density);
-                if(!isAnimated) {
-                    if (scrollY > image.getMeasuredHeight()) {
-
-                        if(scrollY > oldScrollY) {
-
-                            imageCard.animate()
-                                    .scaleX(0.5f)
-                                    .scaleY(0.5f)
-                                    .setListener(new AnimatorListenerAdapter() {
-                                        @Override
-                                        public void onAnimationStart(Animator animation) {
-                                            super.onAnimationStart(animation);
-                                            isAnimated = true;
-
-                                        }
-
-                                        @Override
-                                        public void onAnimationEnd(Animator animation) {
-                                            super.onAnimationEnd(animation);
-                                            isAnimated = false;
-
-                                        }
-                                    })
-                                    .setInterpolator(new DecelerateInterpolator())
-                                    .setDuration(300)
-                                    .start();
-                        }
-
-                    } else {
-
-                        if(scrollY < oldScrollY) {
-
-                            imageCard.animate()
-                                    .scaleX(1)
-                                    .scaleY(1)
-                                    .setListener(new AnimatorListenerAdapter() {
-                                        @Override
-                                        public void onAnimationStart(Animator animation) {
-                                            super.onAnimationStart(animation);
-                                            isAnimated = true;
-
-                                        }
-
-                                        @Override
-                                        public void onAnimationEnd(Animator animation) {
-                                            super.onAnimationEnd(animation);
-                                            isAnimated = false;
-
-                                        }
-                                    })
-                                    .setInterpolator(new DecelerateInterpolator())
-                                    .setDuration(300)
-                                    .start();
-                        }
-                    }
-                }
-                if(scrollY > 0){
-                    imageCard.setCardElevation(8 * getResources().getDisplayMetrics().density);
-
-                } else {
-                    ObjectAnimator elevationAnimator = ObjectAnimator.ofFloat(imageCard, "cardElevation", 8 * getResources().getDisplayMetrics().density, 0);
-                    elevationAnimator.setDuration(300).start();
-                    //imageCard.setCardElevation(0);
-
-                }
-                imageCard.setTranslationY(scrollY);
-            }
-        });
-
-        Call<Shot> shotCall = dribbblePreferences.getApiWithCache(getApplicationContext()).getShot(shot.id);
+        Call<Shot> shotCall = dribbblePreferences.getApi().getShot(shot.id);
         shotCall.enqueue(new Callback<Shot>() {
             @Override
             public void onResponse(Call<Shot> call, Response<Shot> response) {
                 Shot shot = response.body();
-                bindShot(shot);
+                if(shot != null) {
+                    ValueAnimator likeCountAnimator = ValueAnimator.ofInt(0, (int) shot.likes_count);
+                    likeCountAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+                        @SuppressLint("StringFormatMatches")
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                            likeCount.setText(String.format(getString(R.string.number), valueAnimator.getAnimatedValue()));
+                        }
+                    });
+                    likeCountAnimator.setDuration(300);
+                    likeCountAnimator.start();
+
+                    ValueAnimator commentCountAnimator = ValueAnimator.ofInt(0, (int) shot.comments_count);
+                    commentCountAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+                        @SuppressLint("StringFormatMatches")
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                            commentCount.setText(String.format(getString(R.string.number), valueAnimator.getAnimatedValue()));
+                        }
+                    });
+                    commentCountAnimator.setStartDelay(200);
+                    commentCountAnimator.setDuration(300);
+                    commentCountAnimator.start();
+
+                    ValueAnimator viewCountAnimator = ValueAnimator.ofInt(0, (int) shot.views_count);
+                    viewCountAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+                        @SuppressLint("StringFormatMatches")
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                            viewCount.setText(String.format(getString(R.string.number), valueAnimator.getAnimatedValue()));
+                        }
+                    });
+                    viewCountAnimator.setStartDelay(400);
+                    viewCountAnimator.setDuration(300);
+                    viewCountAnimator.start();
+
+                    //likeCount.setText(shot.likes_count + "");
+                    //commentCount.setText(shot.comments_count + "");
+                    //viewCount.setText(shot.views_count + "");
+                }
+
             }
 
             @Override
             public void onFailure(Call<Shot> call, Throwable t) {
-                bindShot(shot);
+                //bindShot(shot);
             }
         });
 
+        bindShot(shot);
 
     }
 
@@ -338,21 +313,32 @@ public class SubActivity extends AppCompatActivity {
             description.setVisibility(View.GONE);
         }
 
-        likeCount.setText(shot.likes_count + "");
-        commentCount.setText(shot.comments_count + "");
-        viewCount.setText(shot.views_count + "");
+        if(shot.tags != null && shot.tags.size() > 0) {
+            tags.setVisibility(View.VISIBLE);
+            tagsTitle.setVisibility(View.VISIBLE);
+            SpannableStringBuilder tagsSpannableStr = new SpannableStringBuilder();
+            for(String tag : shot.tags){
+                tagsSpannableStr.append("<a href=\"https://dribbble.com/");
+                tagsSpannableStr.append(shot.user.username);
+                tagsSpannableStr.append("/tags/");
+                tagsSpannableStr.append(tag);
+                tagsSpannableStr.append("\">");
+                tagsSpannableStr.append("#");
+                tagsSpannableStr.append(tag);
+                tagsSpannableStr.append("</a>&nbsp");
+
+            }
+
+            HtmlUtils.setTextWithNiceLinks(tags, HtmlUtils.parseHtml(tagsSpannableStr.toString(),
+                    ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
+                    ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
+        } else {
+            tags.setVisibility(View.GONE);
+            tagsTitle.setVisibility(View.GONE);
+        }
 
         designerName.setText(HtmlUtils.fromHtml(shot.user.name));
         location.setText(shot.user.location);
-
-        if(shot.comments_count > 1) {
-            responseCount.setText(shot.comments_count + " Responses");
-        } else if(shot.comments_count == 1){
-            responseCount.setText(shot.comments_count + " Response");
-        } else if(shot.comments_count == 0){
-            responseCount.setText("No Response");
-
-        }
 
         setCommentsView();
 
@@ -362,10 +348,18 @@ public class SubActivity extends AppCompatActivity {
             commentsCall.enqueue(new Callback<List<Comment>>() {
                 @Override
                 public void onResponse(Call<List<Comment>> call, Response<List<Comment>> response) {
-                    if(response.body() != null) {
-                        if (response.body().size() > 0) {
-                            ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
-                        }
+                    int commentCount = response.body() != null ? response.body().size() : 0;
+                    if (commentCount > 0) {
+                        ((CommentsAdapter) rvComments.getAdapter()).setComments(response.body());
+                    }
+
+                    if(commentCount > 1) {
+                        responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
+                    } else if(shot.comments_count == 1){
+                        responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
+                    } else if(commentCount == 0){
+                        responseCount.setText(getString(R.string.no_response));
+
                     }
                 }
 
@@ -500,10 +494,20 @@ public class SubActivity extends AppCompatActivity {
         rvComments.setNestedScrollingEnabled(false);
     }
 
-    void setSwatchColor(CardView view, int swatch, int order){
+    void setSwatchColor(CardView view, final int swatch, int order){
         if(swatch != -1) {
             view.setCardBackgroundColor(swatch);
             view.setVisibility(View.VISIBLE);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    String strColor = String.format("%06X", 0xFFFFFF & swatch);
+                    String url = "https://dribbble.com/colors/" + strColor;
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setData(Uri.parse(url));
+                    startActivity(i);
+                }
+            });
         } else {
             view.setVisibility(View.GONE);
         }
@@ -543,11 +547,11 @@ public class SubActivity extends AppCompatActivity {
             Comment comment = comments.get(position);
             holder.userName.setText(comment.user.name);
 
-//            HtmlUtils.setTextWithNiceLinks(description, HtmlUtils.parseHtml(comment.body,
-//                    ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
-//                    ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
+            HtmlUtils.setTextWithNiceLinks(holder.comment, HtmlUtils.parseHtml(comment.body,
+                    ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
+                    ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
 
-            holder.comment.setText(Html.fromHtml(comment.body));
+            //holder.comment.setText(Html.fromHtml(comment.body));
 
             Glide.with(getApplicationContext())
                     .load(comment.user.avatar_url)

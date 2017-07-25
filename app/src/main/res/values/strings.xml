@@ -11,5 +11,10 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="feed_detail">FEED_DETAIL</string>
     <string name="search_guide">Keyword Search</string>
+    <string name="no_response">No Response</string>
+    <string name="response_count_postfix">%d Response</string>
+    <string name="number">%d</string>
+    <string name="tags">TAGS</string>
+    <string name="colors">COLORS</string>
 
 </resources>

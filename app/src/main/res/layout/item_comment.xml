@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingRight="30dp"
     android:paddingBottom="9dp">
     
     <android.support.v7.widget.CardView
@@ -16,8 +14,6 @@
         app:cardElevation="0dp"
         android:layout_marginLeft="20dp"
         android:layout_marginTop="10dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         android:layout_marginStart="20dp">
 
         <ImageView
@@ -35,28 +31,30 @@
         android:layout_marginTop="10dp"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginRight="30dp"
         android:textStyle="bold"
         android:textSize="14sp"
         android:textColor="#2f2944"
         android:letterSpacing="-0.03"
         android:lineSpacingExtra="4sp"
-        tools:text="Nick Slater"
-        app:layout_constraintLeft_toRightOf="@+id/profile_photo_card"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_toRightOf="@+id/profile_photo_card"/>
 
     <TextView
         android:id="@+id/comment"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="5dp"
         android:layout_marginLeft="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginRight="30dp"
         android:textSize="14sp"
         android:textColor="#8c8fa3"
         android:letterSpacing="-0.03"
-        tools:text="Visually very neat - but what am I looking at?"
-        app:layout_constraintLeft_toRightOf="@+id/profile_photo_card"
-        app:layout_constraintTop_toBottomOf="@+id/user_name"
-        />
+        android:text="Visually very neat - but what am I looking at?Visually very neat - but what am I looking at?"
+        android:layout_below="@id/user_name"
+        android:layout_toRightOf="@+id/profile_photo_card"/>
     
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>
