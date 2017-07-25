@@ -24,6 +24,7 @@ import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextUtils;
 
 import com.landkid.said.R;
 import com.landkid.said.util.HtmlUtils;
@@ -150,21 +151,21 @@ public class Shot extends SaidItem implements Parcelable {
         projects_url = in.readString();
         rebounds_url = in.readString();
         animated = in.readByte() != 0x00;
-        tags = new ArrayList<String>();
+        tags = new ArrayList<>();
         in.readStringList(tags);
         user = (User) in.readValue(User.class.getClassLoader());
         team = (Team) in.readValue(Team.class.getClassLoader());
         hasFadedIn = in.readByte() != 0x00;
     }
 
-//    public Spanned getParsedDescription(ColorStateList linkTextColor,
-//                                        @ColorInt int linkHighlightColor) {
-//        if (parsedDescription == null && !TextUtils.isEmpty(description)) {
-//            parsedDescription = DribbbleUtils.parseDribbbleHtml(description, linkTextColor,
-//                    linkHighlightColor);
-//        }
-//        return parsedDescription;
-//    }
+    public Spanned getParsedDescription(ColorStateList linkTextColor,
+                                        @ColorInt int linkHighlightColor) {
+        if (parsedDescription == null && !TextUtils.isEmpty(description)) {
+            parsedDescription = HtmlUtils.parseHtml(description, linkTextColor,
+                    linkHighlightColor);
+        }
+        return parsedDescription;
+    }
 
     public String getParsedTags(){
         SpannableStringBuilder tagsSpannableStr = new SpannableStringBuilder();
