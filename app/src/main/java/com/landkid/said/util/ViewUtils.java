@@ -22,6 +22,7 @@ public class ViewUtils {
     public static final int ANIM_DURATION_SCREEN_OUT = 200;
     private static int transitionDur = 300;
 
+    private ViewUtils(){ }
 
     public static int getViewWidth(View view) {
         WindowManager wm =

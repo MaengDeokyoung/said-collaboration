@@ -25,7 +25,6 @@ public abstract class SaidItem {
     public final String title;
     public String url; // can't be final as some APIs use different serialized names
 
-
     public SaidItem(long id,
                     String title,
                     String url) {

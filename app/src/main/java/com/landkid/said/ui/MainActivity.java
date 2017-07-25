@@ -24,10 +24,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -40,7 +42,7 @@ import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.Shot;
 import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.ui.widget.GooeyFloatingActionButton;
-import com.landkid.said.util.BusProvider;
+import com.landkid.said.util.ResourceUtils;
 import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -56,11 +58,11 @@ import butterknife.ButterKnife;
 public class MainActivity extends AppCompatActivity implements SearchFragment.OnSearchCompleteListener{
 
 
-    static final String MODE_POPULAR = "MODE_POPULAR";
-    static final String MODE_SEARCH = "MODE_SEARCH";
+    private static final String MODE_POPULAR = "MODE_POPULAR";
+    private static final String MODE_SEARCH = "MODE_SEARCH";
 
-    static final String POPULAR_SHOTS_HEADER = "Popular Shots";
-    static final String SEARCH_HEADER_PREFIX = "Searched By: ";
+    public static final String POPULAR_SHOTS_HEADER = "Popular Shots";
+    public static final String SEARCH_HEADER_PREFIX = "Searched By: ";
 
     @Mode String mode = MODE_POPULAR;
 
@@ -90,8 +92,8 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
     private FeedAdapter mFeedAdapter;
 
-    ShotDataManager shotDataManager;
-    SearchDataManager searchDataManager;
+    private ShotDataManager shotDataManager;
+    private SearchDataManager searchDataManager;
 
     InfiniteScrollListener infiniteScrollListener;
 
@@ -112,13 +114,12 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
     private void loadStarted(String headerTitle) {
         BaseDataManager.loadCancel();
-        Shot shot = new Shot(0,null,null,0,0,null,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,false,null,null,null);
-        shot.isHeaderItem = true;
-        shot.headerTitle = headerTitle;
+        Shot shot = new Shot(headerTitle, true);
         List<Shot> initShots = new ArrayList<>();
         initShots.add(0, shot);
         mFeedAdapter.setShots(initShots);
         showProgress(Gravity.CENTER);
+
     }
 
     String mQuerySearched;
@@ -289,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
     }
 
     void showProgress(int gravity){
-        ((CoordinatorLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
+        ((FrameLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
         mPbLoading.setVisibility(View.VISIBLE);
         mPbLoading.requestLayout();
     }
@@ -305,14 +306,13 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 .addItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-RI.ttf"));
 
         setContentView(R.layout.activity_main);
-        BusProvider.getInstance().register(this);
         ButterKnife.bind(this);
         setActionBarAndDrawer();
 
 
         final View homeBtn = toolbar.getChildAt(0);
 
-        homeBtn.setTranslationX(-200f);
+        homeBtn.setTranslationX(- ResourceUtils.dpToPx(100f, getApplicationContext()));
         homeBtn.setRotation(-360);
 
         //TODO make home button animation
@@ -328,7 +328,6 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                         .start();
             }
         }, 1000);
-
 
         drawer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -346,9 +345,9 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 toolbar.setLayoutParams(lpToolbar);
                 toolbar.setPadding(
                         0,
-                        0,
+                        (int) ViewUtils.dp(10, getApplicationContext()),
                         (int) ViewUtils.dp(15, getApplicationContext()),
-                        0);
+                        (int) ViewUtils.dp(10, getApplicationContext()));
 
                 ViewGroup.MarginLayoutParams homeBtn = (ViewGroup.MarginLayoutParams) toolbar.getChildAt(0).getLayoutParams();
                 homeBtn.leftMargin += ViewUtils.dp(15, getApplicationContext());
@@ -367,6 +366,8 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 return insets.consumeSystemWindowInsets();
             }
         });
+
+
 
 
         LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false);
@@ -456,7 +457,6 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
     @Override
     protected void onDestroy() {
-        BusProvider.getInstance().unregister(this);
         super.onDestroy();
     }
 

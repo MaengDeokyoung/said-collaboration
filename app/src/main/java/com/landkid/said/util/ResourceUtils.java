@@ -12,6 +12,8 @@ import android.util.TypedValue;
  */
 public class ResourceUtils {
 
+    private ResourceUtils(){ }
+
     public static float dpToPx(int size, Context context){
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, context.getResources().getDisplayMetrics());
     }

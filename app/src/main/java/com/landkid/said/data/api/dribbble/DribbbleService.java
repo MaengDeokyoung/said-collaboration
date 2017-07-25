@@ -51,6 +51,9 @@ public interface DribbbleService {
     Call<List<Shot>> getPopular(@Query("page") Integer page,
                                 @Query("per_page") Integer pageSize);
 
+    @GET("v1/shots/{id}")
+    Call<Shot> getShot(@Path("id") long shotId);
+
     @GET("v1/shots/{id}/like")
     Call<Like> checkLiked(@Path("id") long shotId);
 

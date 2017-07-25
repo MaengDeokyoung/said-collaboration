@@ -85,7 +85,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="9dp"
-                            android:text="225"
                             android:textColor="@color/dark_gray"
                             android:textSize="16sp" />
                     </LinearLayout>
@@ -107,7 +106,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="9dp"
-                            android:text="225"
                             android:textColor="@color/dark_gray"
                             android:textSize="16sp" />
                     </LinearLayout>
@@ -130,7 +128,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="9dp"
-                            android:text="225"
                             android:textColor="@color/dark_gray"
                             android:textSize="16sp" />
                     </LinearLayout>
@@ -157,7 +154,6 @@
                     android:id="@+id/title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Stance : product detail page"
                     android:textColor="@color/dark_gray"
                     android:textSize="34sp"
                     android:textStyle="bold" />
@@ -280,7 +276,6 @@
                             android:id="@+id/designer_name"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Nick Slater"
                             android:textColor="#2f2944"
                             android:textSize="14sp" />
 
@@ -288,7 +283,6 @@
                             android:id="@+id/location"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Asana"
                             android:textColor="#8c8fa3"
                             android:textSize="14sp" />
 
@@ -318,7 +312,6 @@
                 android:layout_marginLeft="20dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginBottom="18dp"
-                android:text="12 Responses"
                 />
 
             <android.support.v7.widget.RecyclerView

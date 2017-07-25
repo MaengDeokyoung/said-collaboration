@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#fafafa</color>
-    <color name="colorPrimaryDark">#ccfafafa</color>
+    <color name="colorPrimaryDark_v23">#ccfafafa</color>
+    <color name="colorPrimaryDark">#33000000</color>
     <color name="colorAccent">#292c44</color>
 
     <color name="colorHeartFilled">#FF4081</color>

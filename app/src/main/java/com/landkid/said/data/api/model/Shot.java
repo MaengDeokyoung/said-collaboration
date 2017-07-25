@@ -59,6 +59,13 @@ public class Shot extends SaidItem implements Parcelable {
     public boolean hasFadedIn = false;
     public Spanned parsedDescription;
 
+    public Shot(String headerTitle, boolean isHeaderItem){
+        this(0,null,null,0,0,null,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,false,null,null,null);
+        this.isHeaderItem = isHeaderItem;
+        this.headerTitle = headerTitle;
+    }
+
+
     public Shot(long id,
                 String title,
                 String description,

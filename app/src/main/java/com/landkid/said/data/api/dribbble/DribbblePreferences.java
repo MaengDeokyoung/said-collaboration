@@ -231,8 +231,8 @@ public class DribbblePreferences {
 
         final OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(new AuthInterceptor(getAccessToken()))
-                .cache(cache)
                 .addNetworkInterceptor(new CachingControlInterceptor(context))
+                .cache(cache)
                 .build();
 
         final Gson gson = new GsonBuilder()

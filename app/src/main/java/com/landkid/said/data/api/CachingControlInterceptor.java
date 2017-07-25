@@ -46,7 +46,7 @@ public class CachingControlInterceptor implements Interceptor {
 
         Response originalResponse = chain.proceed(request);
         return originalResponse.newBuilder()
-                .header("Cache-Control", "max-age=600")
+                .header("Cache-Control", "max-age=0")
                 .build();
     }
 }
