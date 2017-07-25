@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.landkid.said.ui;
+package com.landkid.said.ui.listener;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;

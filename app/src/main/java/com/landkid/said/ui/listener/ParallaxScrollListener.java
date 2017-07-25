@@ -1,6 +1,8 @@
-package com.landkid.said.ui;
+package com.landkid.said.ui.listener;
 
 import android.support.v7.widget.RecyclerView;
+
+import com.landkid.said.ui.FeedAdapter;
 
 /**
  * Created by landkid on 2017. 7. 24..
