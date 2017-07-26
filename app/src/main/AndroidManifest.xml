@@ -13,7 +13,7 @@
 
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Said.Main">
 
         <activity android:name=".ui.MainActivity"
             android:windowSoftInputMode="adjustNothing">
@@ -23,7 +23,8 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.SubActivity">
+        <activity android:name=".ui.SubActivity"
+            android:theme="@style/Said.Translucent.Sub">
         </activity>
 
         <activity
@@ -41,7 +42,7 @@
         </activity>
 
         <activity android:name=".ui.SearchActivity"
-            android:theme="@style/AppTheme.NoBackground">
+            android:theme="@style/Said.Search">
 
         </activity>
 

@@ -1,11 +1,30 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- Customize your theme here. -->
+    <style name="Said" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowAllowEnterTransitionOverlap">true</item>
+        <item name="android:windowAllowReturnTransitionOverlap">true</item>
+        <item name="android:windowSharedElementsUseOverlay">false</item>
+    </style>
+
+    <style name="Said.Translucent">
+        <!-- using a semi-transparent window background for the drag-back gesture -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+
+    <style name="Said.Main">
+        <!-- Customize your theme here. -->
+
         <item name="android:windowBackground">@color/colorPrimary</item>
         <item name="android:windowContentTransitions">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
@@ -14,16 +33,33 @@
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
         <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="colorControlHighlight">@color/colorHeartFilled</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="AppTheme.NoBackground" parent="AppTheme">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
+    <style name="Said.Translucent.Sub">
+        <!-- Customize your theme here. -->
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="colorControlHighlight">@color/colorHeartFilled</item>
         <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowEnterTransition">@transition/sub_enter</item>
+        <item name="android:windowReturnTransition">@transition/sub_return</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/sub_shared_enter</item>
+        <item name="android:windowSharedElementReturnTransition">@transition/sub_shared_return</item>
     </style>
 
 
-    <style name="AppTheme.ActionBarStyle" parent="Base.Widget.AppCompat.Light.ActionBar.Solid">
+    <style name="Said.Search" parent="Said.Main">
+        <item name="android:windowIsTranslucent">true</item>
+
+    </style>
+
+
+    <style name="Said.Main.ActionBarStyle" parent="Base.Widget.AppCompat.Light.ActionBar.Solid">
         <item name="elevation">0dp</item>
     </style>
 

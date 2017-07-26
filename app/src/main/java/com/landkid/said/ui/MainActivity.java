@@ -24,6 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -324,6 +325,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 homeBtn.animate()
                         .translationX(0)
                         .rotation(0)
+                        .setInterpolator(new DecelerateInterpolator(2.0f))
                         .setDuration(300)
                         .start();
             }

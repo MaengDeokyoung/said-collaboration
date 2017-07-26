@@ -13,6 +13,7 @@
 
     <color name="dgray">#292c44</color>
     <color name="pale_grey">#dbdceb</color>
+    <color name="fab">#fcfcfc</color>
 
 
 </resources>

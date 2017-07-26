@@ -357,10 +357,11 @@
         android:layout_margin="20dp"
         android:src="@drawable/ic_back_wh"
         android:transitionName="@string/feed_detail"
+        app:elevation="4dp"
         app:fabSize="normal"
-        app:backgroundTint="#fcfcfc"
-        app:borderWidth="1dp"
-        app:rippleColor="#19000000" />
+        app:backgroundTint="@color/fab"
+        app:borderWidth="0dp"
+        app:rippleColor="#9d000000" />
 </FrameLayout>
 
 
