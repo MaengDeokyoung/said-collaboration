@@ -17,6 +17,7 @@
 package in.uncod.android.bypass.style;
 
 import android.content.res.ColorStateList;
+import android.os.Parcel;
 import android.text.TextPaint;
 import android.text.style.URLSpan;
 
@@ -52,4 +53,19 @@ public class TouchableUrlSpan extends URLSpan {
         drawState.bgColor = isPressed ? pressedBackgroundColor : 0;
         drawState.setUnderlineText(!isPressed);
     }
+
+    Creator CREATOR = new Creator() {
+        @Override
+        public Object createFromParcel(Parcel source) {
+            source.writeInt(normalTextColor);
+            source.writeInt(pressedTextColor);
+            source.writeInt(pressedBackgroundColor);
+            return null;
+        }
+
+        @Override
+        public Object[] newArray(int size) {
+            return new Object[0];
+        }
+    };
 }

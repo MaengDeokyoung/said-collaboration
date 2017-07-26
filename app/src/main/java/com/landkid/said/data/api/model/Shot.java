@@ -177,7 +177,7 @@ public class Shot extends SaidItem implements Parcelable {
             tagsSpannableStr.append("\">");
             tagsSpannableStr.append("#");
             tagsSpannableStr.append(tag);
-            tagsSpannableStr.append("</a>&nbsp;&nbsp;");
+            tagsSpannableStr.append("</a>  ");
         }
         return tagsSpannableStr.toString();
     }

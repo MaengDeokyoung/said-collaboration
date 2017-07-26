@@ -287,6 +287,8 @@ public class SubActivity extends AppCompatActivity implements View.OnClickListen
             tags.setVisibility(View.VISIBLE);
             tagsTitle.setVisibility(View.VISIBLE);
 
+//            tags.setText(shot.getParsedTags());
+
             HtmlUtils.setTextWithLinks(tags,
                     HtmlUtils.parseHtml(shot.getParsedTags(),
                     ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
