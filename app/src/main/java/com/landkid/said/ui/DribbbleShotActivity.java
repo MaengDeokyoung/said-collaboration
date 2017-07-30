@@ -6,10 +6,8 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,7 +15,6 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -46,9 +43,9 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.landkid.said.R;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
-import com.landkid.said.data.api.model.Comment;
-import com.landkid.said.data.api.model.Like;
-import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.data.api.model.dribbble.Comment;
+import com.landkid.said.data.api.model.dribbble.Like;
+import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.ui.listener.SubScrollListener;
 import com.landkid.said.util.HtmlUtils;
 import com.landkid.said.util.interpolator.EaseOutElasticInterpolator;
@@ -69,7 +66,7 @@ import retrofit2.Response;
  * Created by landkid on 2017. 6. 18..
  */
 
-public class SubActivity extends AppCompatActivity implements View.OnClickListener {
+public class DribbbleShotActivity extends AppCompatActivity implements View.OnClickListener {
 
     @BindView(R.id.v_muted_dark_swatch) CardView mutedDarkSwatch;
     @BindView(R.id.v_muted_light_swatch) CardView mutedLightSwatch;
@@ -161,7 +158,7 @@ public class SubActivity extends AppCompatActivity implements View.OnClickListen
                 .addBoldItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-BI.ttf"))
                 .addItalic(Typekit.createFromAsset(this, "fonts/ubuntu/Ubuntu-RI.ttf"));
 
-        setContentView(R.layout.activity_sub);
+        setContentView(R.layout.activity_dribbble_shot);
         ButterKnife.bind(this);
 
         dribbblePreferences = DribbblePreferences.get(getApplicationContext());
@@ -291,8 +288,8 @@ public class SubActivity extends AppCompatActivity implements View.OnClickListen
 
             HtmlUtils.setTextWithLinks(tags,
                     HtmlUtils.parseHtml(shot.getParsedTags(),
-                    ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
-                    ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
+                    ContextCompat.getColorStateList(getApplicationContext(), R.color.tag_text_color),
+                    ContextCompat.getColor(getApplicationContext(), R.color.colorAccent)));
         } else {
             tags.setVisibility(View.GONE);
             tagsTitle.setVisibility(View.GONE);

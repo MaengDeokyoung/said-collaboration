@@ -2,8 +2,7 @@ package com.landkid.said.data.api.dribbble;
 
 import android.support.annotation.StringDef;
 
-import com.landkid.said.data.api.model.SaidItem;
-import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.data.api.model.dribbble.Shot;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

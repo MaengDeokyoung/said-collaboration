@@ -18,9 +18,9 @@ package com.landkid.said.data.api.dribbble;
 
 import android.text.TextUtils;
 
-import com.landkid.said.data.api.model.Images;
-import com.landkid.said.data.api.model.Shot;
-import com.landkid.said.data.api.model.User;
+import com.landkid.said.data.api.model.dribbble.Images;
+import com.landkid.said.data.api.model.dribbble.Shot;
+import com.landkid.said.data.api.model.dribbble.User;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;

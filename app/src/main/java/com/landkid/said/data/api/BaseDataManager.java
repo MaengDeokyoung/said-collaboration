@@ -13,18 +13,18 @@ import retrofit2.Call;
 
 public abstract class BaseDataManager<T> {
 
-    AtomicInteger loadingCount = new AtomicInteger(0);
-    ArrayList<Integer> mPageIndexes;
-    static ArrayList<Call> inflight;
+    protected AtomicInteger loadingCount = new AtomicInteger(0);
+    protected ArrayList<Integer> mPageIndexes;
+    protected static ArrayList<Call> inflight;
 
-    BaseDataManager(){
+    protected BaseDataManager(){
         inflight= new ArrayList<>();
     }
 
 
     public abstract void onDataLoaded(T items);
 
-    public static void loadCancel(){
+    protected static void loadCancel(){
         for(Call call : inflight){
             call.cancel();
         }
@@ -51,7 +51,7 @@ public abstract class BaseDataManager<T> {
         mPageIndexes.add(0);
     }
 
-    public int getNextPageIndexes(){
+    protected int getNextPageIndexes(){
         return mPageIndexes.size();
     }
 

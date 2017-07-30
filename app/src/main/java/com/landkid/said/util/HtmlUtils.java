@@ -46,7 +46,7 @@ public class HtmlUtils {
     public static SpannableStringBuilder parseHtml(String input, ColorStateList linkTextColor, @ColorInt int linkHighlightColor) {
         SpannableStringBuilder spanned = fromHtml(input);
 
-        while (spanned.charAt(spanned.length() - 1) == '\n') {
+        while (spanned.length() - 1 >= 0 && spanned.charAt(spanned.length() - 1) == '\n') {
             spanned = spanned.delete(spanned.length() - 1, spanned.length());
         }
 

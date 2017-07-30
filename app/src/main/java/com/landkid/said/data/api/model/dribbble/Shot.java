@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package com.landkid.said.data.api.model;
+package com.landkid.said.data.api.model.dribbble;
 
 import android.content.res.ColorStateList;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.ColorInt;
-import android.support.v4.content.ContextCompat;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 
-import com.landkid.said.R;
+import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.util.HtmlUtils;
 
 import java.util.ArrayList;
@@ -38,8 +36,7 @@ import java.util.List;
  */
 public class Shot extends SaidItem implements Parcelable {
 
-    public boolean isHeaderItem = false;
-    public String headerTitle = "Popular Shots";
+
 
     public final String description;
     public final long width;
@@ -68,12 +65,10 @@ public class Shot extends SaidItem implements Parcelable {
     public boolean hasFadedIn = false;
     public Spanned parsedDescription;
 
-    public Shot(String headerTitle, boolean isHeaderItem){
+    public Shot(){
         this(0,null,null,0,0,null,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,false,null,null,null);
-        this.isHeaderItem = isHeaderItem;
-        this.headerTitle = headerTitle;
-    }
 
+    }
 
     public Shot(long id,
                 String title,
@@ -176,7 +171,7 @@ public class Shot extends SaidItem implements Parcelable {
             tagsSpannableStr.append(tag);
             tagsSpannableStr.append("\">");
             tagsSpannableStr.append("#");
-            tagsSpannableStr.append(tag);
+            tagsSpannableStr.append(tag.replace(" ", ""));
             tagsSpannableStr.append("</a>  ");
         }
         return tagsSpannableStr.toString();

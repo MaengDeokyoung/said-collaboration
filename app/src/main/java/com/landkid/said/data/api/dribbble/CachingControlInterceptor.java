@@ -1,4 +1,4 @@
-package com.landkid.said.data.api;
+package com.landkid.said.data.api.dribbble;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

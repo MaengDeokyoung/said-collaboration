@@ -1,10 +1,6 @@
 
 
-package com.landkid.said.data.api.model;
-
-import android.text.Spanned;
-import android.text.TextUtils;
-import android.widget.TextView;
+package com.landkid.said.data.api.model.dribbble;
 
 import java.util.Date;
 

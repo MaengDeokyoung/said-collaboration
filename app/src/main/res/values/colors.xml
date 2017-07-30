@@ -10,6 +10,7 @@
     <color name="colorPrimaryDarkLowSdk">#33000000</color>
 
     <color name="dark_gray">#193040</color>
+    <color name="light_gray">#cbcbcb</color>
 
     <color name="dgray">#292c44</color>
     <color name="pale_grey">#dbdceb</color>

@@ -16,21 +16,16 @@
 
 package com.landkid.said.data.api.dribbble;
 
-import android.support.annotation.StringDef;
+import com.landkid.said.data.api.model.dribbble.Comment;
+import com.landkid.said.data.api.model.dribbble.Like;
+import com.landkid.said.data.api.model.dribbble.Shot;
 
-import com.landkid.said.data.api.model.Comment;
-import com.landkid.said.data.api.model.Like;
-import com.landkid.said.data.api.model.Shot;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
-import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 

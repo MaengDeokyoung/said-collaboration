@@ -23,7 +23,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.SubActivity"
+        <activity android:name=".ui.DribbbleShotActivity"
+            android:theme="@style/Said.Translucent.Sub">
+        </activity>
+
+        <activity android:name=".ui.BehanceProjectActivity"
             android:theme="@style/Said.Translucent.Sub">
         </activity>
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.landkid.said.data.api.model;
+package com.landkid.said.data.api.model.dribbble;
 
 import android.support.annotation.Nullable;
 

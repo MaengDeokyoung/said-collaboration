@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google Inc.
+ * Copyright 2016 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package com.landkid.said.data.api.model;
+package com.landkid.said.data.api.dribbble;
 
-public class AccessToken {
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    public final String access_token;
-    public final String token_type;
-    public final String scope;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-    public AccessToken(String access_token, String token_type, String scope) {
-        this.access_token = access_token;
-        this.token_type = token_type;
-        this.scope = scope;
-    }
+/**
+ * An annotation for identifying the payload that we want to extract from an API response wrapped in
+ * an envelope object.
+ */
+@Target(METHOD)
+@Retention(RUNTIME)
+public @interface EnvelopePayload {
+    String value() default "";
 }

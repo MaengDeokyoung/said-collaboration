@@ -25,10 +25,7 @@ import android.text.TextUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.landkid.said.BuildConfig;
-import com.landkid.said.data.api.AuthInterceptor;
-import com.landkid.said.data.api.CachingControlInterceptor;
-import com.landkid.said.data.api.DenvelopingConverter;
-import com.landkid.said.data.api.model.User;
+import com.landkid.said.data.api.model.dribbble.User;
 
 import java.io.File;
 import java.util.ArrayList;

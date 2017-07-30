@@ -2,6 +2,7 @@ package com.landkid.said.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,12 +12,10 @@ import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Interpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -27,9 +26,10 @@ import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.landkid.said.R;
-import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.SaidItem;
-import com.landkid.said.data.api.model.Shot;
+import com.landkid.said.data.api.model.behance.Project;
+import com.landkid.said.data.api.model.dribbble.Shot;
+import com.landkid.said.util.HtmlUtils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -45,34 +46,32 @@ import butterknife.ButterKnife;
  * Created by sds on 2017. 6. 5..
  */
 
-public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
+public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {
 
-    public static final String KEY_SHOT = "KEY_SHOT";
+    protected static final String KEY_SHOT = "KEY_SHOT";
 
-    List<Shot> shots;
-    DribbblePreferences dribbblePreferences;
-    Context mContext;
+    private List<SI> items;
+    private Context mContext;
 
     FeedAdapter(Context context) {
-        this.shots = new ArrayList<>();
-        this.dribbblePreferences = DribbblePreferences.get(context);
+        this.items = new ArrayList<>();
         this.mContext = context;
     }
 
-    public void setShots(List<Shot> shots){
-        this.shots = shots;
+    public void setItems(List<SI> items){
+        this.items = items;
         notifyDataSetChanged();
     }
 
-    public void addShots(List<Shot> shots) {
+    public void addShots(List<SI> shots) {
 
-//        int previousShotLength = shots.size();
-//        for (SaidItem shot : shots) {
-//            this.shots.add((Shot) shot);
+//        int previousShotLength = items.size();
+//        for (SaidItem shot : items) {
+//            this.items.add((Shot) shot);
 //        }
-//        notifyItemRangeInserted(previousShotLength, previousShotLength + shots.size() - 1);
-        for (SaidItem shot : shots) {
-            this.shots.add((Shot) shot);
+//        notifyItemRangeInserted(previousShotLength, previousShotLength + items.size() - 1);
+        for (SI shot : shots) {
+            this.items.add(shot);
         }
         notifyDataSetChanged();
     }
@@ -86,13 +85,13 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
-    static final int TYPE_HEADER = 1;
-    static final int TYPE_ITEM = 0;
+    private static final int TYPE_HEADER = 1;
+    private static final int TYPE_ITEM = 0;
 
     @Override
     public int getItemViewType(int position) {
 
-        if(shots.get(position).isHeaderItem){
+        if(items.get(position).isHeaderItem){
             return TYPE_HEADER;
         } else {
             return TYPE_ITEM;
@@ -117,85 +116,157 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
 
     @Override
     public void onBindViewHolder(FeedViewHolder feedViewHolder, int position) {
-        final Shot shot = shots.get(position);
+        if(items.get(position) instanceof Shot) {
+            final Shot shot = (Shot) items.get(position);
 
-        if(getItemViewType(position) == TYPE_HEADER){
-            HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
-            headerViewHolder.header.setText(shot.headerTitle);
-            return;
-        }
+            if (getItemViewType(position) == TYPE_HEADER) {
+                HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
+                headerViewHolder.header.setText(shot.headerTitle);
+                return;
+            }
 
-        final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
+            final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
 
-        holder.username.setText(Html.fromHtml(shot.user.name));
+            holder.username.setText(HtmlUtils.fromHtml(shot.user.name));
 
-        holder.image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(holder.isReady) {
+            holder.image.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (holder.isReady) {
 
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable(KEY_SHOT, shot);
+
+
+                        Message message = new Message();
+                        message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+                        message.setData(bundle);
+                        ((MainActivity) mContext).transitionHandler.sendMessage(message);
+
+
+                        //mContext.startActivity(intent);
+                    }
+                }
+            });
+
+            Glide.with(holder.itemView.getContext())
+                    .load(shot.images.best())
+                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
+                    .into(new GlideDrawableImageViewTarget(holder.image) {
+                        @Override
+                        public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+                            super.onResourceReady(resource, animation);
+                            if (resource instanceof GifDrawable) {
+                                GifDrawable gif = (GifDrawable) resource;
+                                gif.start();
+                            }
+                            holder.isReady = true;
+                        }
+                    });
+
+            holder.likeCount.setText(String.valueOf(shot.likes_count));
+            holder.viewCount.setText(String.valueOf(shot.views_count));
+
+            if (shot.created_at != null) {
+                Date today = new Date();
+                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM, YYYY", Locale.ENGLISH);
+
+                if (format.format(today).equals(format.format(shot.created_at))) {
+                    SimpleDateFormat timeFormat = new SimpleDateFormat("HH", Locale.ENGLISH);
+                    holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(shot.created_at))) + " hours ago");
+                } else {
+                    holder.createAt.setText(format.format(shot.created_at));
+                }
+            } else {
+                holder.createAt.setVisibility(View.GONE);
+            }
+
+            holder.share.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (holder.isReady) {
+                        new ShareDribbbleImageTask((Activity) holder.itemView.getContext(), shot).execute();
+                    }
+                }
+            });
+        } else if (items.get(position) instanceof Project){
+            final Project project = (Project) items.get(position);
+
+            if (getItemViewType(position) == TYPE_HEADER) {
+                HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
+                headerViewHolder.header.setText(project.headerTitle);
+                return;
+            }
+
+            final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
+
+            holder.username.setText(HtmlUtils.fromHtml(project.name));
+
+            Glide.with(holder.itemView.getContext())
+                    .load(project.covers.get("404"))
+                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .into(new GlideDrawableImageViewTarget(holder.image) {
+                        @Override
+                        public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+                            super.onResourceReady(resource, animation);
+                            if (resource instanceof GifDrawable) {
+                                GifDrawable gif = (GifDrawable) resource;
+                                gif.start();
+                            }
+                            holder.isReady = true;
+                        }
+                    });
+
+            Date createdOn = new Date(TimeUnit.SECONDS.toMillis(project.created_on));
+
+            if (createdOn != null) {
+                Date today = new Date();
+                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM, YYYY", Locale.ENGLISH);
+
+                if (format.format(today).equals(format.format(createdOn))) {
+                    SimpleDateFormat timeFormat = new SimpleDateFormat("HH", Locale.ENGLISH);
+                    holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(createdOn))) + " hours ago");
+                } else {
+                    holder.createAt.setText(format.format(createdOn));
+                }
+            } else {
+                holder.createAt.setVisibility(View.GONE);
+            }
+
+            final String url = project.url;
+            holder.image.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+//                    Intent i = new Intent(Intent.ACTION_VIEW);
+//                    i.setData(Uri.parse(url));
+//                    mContext.startActivity(i);
                     Bundle bundle = new Bundle();
-                    bundle.putParcelable(KEY_SHOT, shot);
+                    bundle.putLong(BehanceProjectActivity.KEY_PROJECT_ID, project.id);
 
 
                     Message message = new Message();
-                    message.what = MainActivity.TO_SUB_ACTIVITY;
+                    message.what = MainActivity.TO_BEHANCE_PROJECT_ACTIVITY;
                     message.setData(bundle);
                     ((MainActivity) mContext).transitionHandler.sendMessage(message);
+                    if (holder.isReady) {
 
 
 
-                    //mContext.startActivity(intent);
-                }
-            }
-        });
 
-        Glide.with(holder.itemView.getContext())
-                .load(shot.images.best())
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                .into(new GlideDrawableImageViewTarget(holder.image){
-                    @Override
-                    public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
-                        super.onResourceReady(resource, animation);
-                        if(resource instanceof GifDrawable){
-                            GifDrawable gif = (GifDrawable) resource;
-                            gif.start();
-                        }
-                        holder.isReady = true;
+                        //mContext.startActivity(intent);
                     }
-                });
 
-        holder.likeCount.setText(shot.likes_count + "");
-        holder.viewCount.setText(shot.views_count + "");
-
-        if(shot.created_at != null) {
-            Date today = new Date();
-            SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM", Locale.ENGLISH);
-
-            if (format.format(today).equals(format.format(shot.created_at))) {
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH", Locale.ENGLISH);
-                holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(shot.created_at))) + " hours ago");
-            } else {
-                holder.createAt.setText(format.format(shot.created_at));
-            }
-        } else {
-            holder.createAt.setVisibility(View.GONE);
-        }
-
-        holder.share.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(holder.isReady) {
-                    new ShareDribbbleImageTask((Activity) holder.itemView.getContext(), shot).execute();
                 }
-            }
-        });
+            });
+            holder.viewCount.setText(String.valueOf(project.stats.views));
+
+        }
     }
 
     @Override
     public int getItemCount() {
-        return shots.size();
+        return items.size();
     }
 
     static abstract class FeedViewHolder extends RecyclerView.ViewHolder{
@@ -240,7 +311,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
         }
     }
 
-    class ShareDribbbleImageTask extends AsyncTask<Void, Void, File> {
+    private class ShareDribbbleImageTask extends AsyncTask<Void, Void, File> {
 
         private final Activity activity;
         private final Shot shot;
@@ -303,29 +374,5 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
             return "image/jpeg";
         }
     }
-
-    class EaseInOutElasticInterpolator implements Interpolator {
-
-        @Override
-        public float getInterpolation(float input) {
-            float t = input * 2;
-            float p = 0.45f;
-            float PI = (float) Math.PI;
-
-            if(t < 1) {
-                float a = (float) Math.pow(2, 10 * (t -= 1));
-                float b = (float) Math.sin((t - p / 4) * ( 2 * PI ) / p);
-                return - a * b / 2;
-            }
-
-            else {
-                float c = (float) Math.pow(2, -10 * (t -= 1));
-                float d = (float) Math.sin((t - p / 4) * ( 2 * PI ) / p);
-                return c * d / 2 + 1 ;
-            }
-        }
-    }
-
-
 }
 

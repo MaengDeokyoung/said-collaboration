@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.landkid.said.data.api;
+package com.landkid.said.data.api.dribbble;
 
 import java.io.IOException;
 

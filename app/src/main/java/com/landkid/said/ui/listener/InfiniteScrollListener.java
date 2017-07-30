@@ -16,15 +16,10 @@
 
 package com.landkid.said.ui.listener;
 
-import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.landkid.said.data.api.BaseDataManager;
-import com.landkid.said.data.api.SearchDataManager;
-import com.landkid.said.data.api.ShotDataManager;
-
-import java.util.ArrayList;
 
 /**
  * A scroll listener for RecyclerView to load more items as you approach the end.

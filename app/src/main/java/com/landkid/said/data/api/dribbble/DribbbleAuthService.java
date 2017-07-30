@@ -1,6 +1,6 @@
 package com.landkid.said.data.api.dribbble;
 
-import com.landkid.said.data.api.model.AccessToken;
+import com.landkid.said.data.api.model.dribbble.AccessToken;
 
 import retrofit2.Call;
 import retrofit2.http.POST;

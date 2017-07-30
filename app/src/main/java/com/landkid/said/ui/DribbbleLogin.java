@@ -31,7 +31,7 @@ import com.landkid.said.BuildConfig;
 import com.landkid.said.R;
 import com.landkid.said.data.api.dribbble.DribbbleAuthService;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
-import com.landkid.said.data.api.model.AccessToken;
+import com.landkid.said.data.api.model.dribbble.AccessToken;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
