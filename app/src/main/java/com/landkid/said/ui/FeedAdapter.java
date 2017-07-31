@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -233,6 +234,12 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                     .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
                     .into(holder.image);
 
+            if(shot.images.best().endsWith(".gif")){
+                holder.gifIndicator.setVisibility(View.VISIBLE);
+            } else {
+                holder.gifIndicator.setVisibility(View.GONE);
+            }
+
 //            new GlideDrawableImageViewTarget(holder.image) {
 //                @Override
 //                public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
@@ -369,6 +376,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         @BindView(R.id.iv_share) ImageView share;
 
         @BindView(R.id.image_card) CardView imageCard;
+        @BindView(R.id.gif_indicator) LinearLayout gifIndicator;
 
         boolean isReady = false;
 
