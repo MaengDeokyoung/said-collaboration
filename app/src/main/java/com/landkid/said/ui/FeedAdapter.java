@@ -1,9 +1,14 @@
 package com.landkid.said.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -46,6 +51,7 @@ import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.util.HtmlUtils;
+import com.landkid.said.util.glide.FeedImageTarget;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -152,87 +158,59 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                 @Override
                 public void onClick(View v) {
                     if (holder.isReady) {
-                        new Thread(new StatusBarColorChangeRunnable((BitmapDrawable) holder.image.getDrawable(), shot)).start();
+                        Bitmap bitmap;
+                        if(holder.image.getDrawable() instanceof GlideBitmapDrawable) {
+                            bitmap = ((GlideBitmapDrawable) holder.image.getDrawable()).getBitmap();
+                        } else {
+                            bitmap = ((GifDrawable) holder.image.getDrawable()).getFirstFrame();
 
-//                        Bundle bundle = new Bundle();
-//                        bundle.putParcelable(KEY_SHOT, shot);
-//
-//
-//                        Message message = new Message();
-//                        message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
-//                        message.setData(bundle);
-//                        ((MainActivity) mContext).transitionHandler.sendMessage(message);
+                        }
 
 
-                        //mContext.startActivity(intent);
+                        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                            public void onGenerated(Palette p) {
+                                int[] colors = {
+                                        p.getVibrantColor(-1),
+                                        p.getLightVibrantColor(-1),
+                                        p.getDarkVibrantColor(-1),
+                                        p.getMutedColor(-1),
+                                        p.getLightMutedColor(-1),
+                                        p.getDarkMutedColor(-1)};
+
+                                Bundle bundle = new Bundle();
+                                bundle.putParcelable(FeedAdapter.KEY_SHOT, shot);
+                                bundle.putIntArray(mContext.getString(R.string.swatch_colors_key), colors);
+
+                                Message message = new Message();
+                                message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+                                message.setData(bundle);
+                                ((MainActivity) mContext).transitionHandler.sendMessage(message);
+                            }
+                        });
+
                     }
                 }
             });
 
-//            ImageRequest imageRequest = ImageRequestBuilder
-//                    .newBuilderWithSource(Uri.parse(shot.images.best()))
-//                    .setRequestPriority(Priority.HIGH)
-//                    .setProgressiveRenderingEnabled(true)
-//                    .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
-//                    .build();
-//
-//
-//            DraweeController controller = Fresco.newDraweeControllerBuilder()
-//                    .setImageRequest(imageRequest)
-//                    .setOldController(holder.image.getController())
-//                    .setAutoPlayAnimations(true)
-//                    .setControllerListener(new ControllerListener<ImageInfo>() {
-//                        @Override
-//                        public void onSubmit(String id, Object callerContext) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onFinalImageSet(String id, ImageInfo imageInfo, Animatable animatable) {
-//                            holder.isReady = true;
-//                        }
-//
-//                        @Override
-//                        public void onIntermediateImageSet(String id, ImageInfo imageInfo) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onIntermediateImageFailed(String id, Throwable throwable) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onFailure(String id, Throwable throwable) {
-//
-//                        }
-//
-//                        @Override
-//                        public void onRelease(String id) {
-//
-//                        }
-//                    })
-//                    .build();
-//            holder.image.setController(controller);
-
             Glide.with(holder.itemView.getContext())
                     .load(shot.images.best())
-                    .asBitmap()
                     .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                    .listener(new RequestListener<String, Bitmap>() {
+                    .listener(new RequestListener<String, GlideDrawable>() {
                         @Override
-                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
                             return false;
                         }
 
                         @Override
-                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
                             holder.isReady = true;
+                            resource.stop();
                             return false;
                         }
                     })
+                    .fitCenter()
                     .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                    .into(holder.image);
+                    .into(new FeedImageTarget(holder.image, false));
 
             if(shot.images.best().endsWith(".gif")){
                 holder.gifIndicator.setVisibility(View.VISIBLE);
@@ -467,7 +445,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
     private class StatusBarColorChangeRunnable implements Runnable {
 
-        private BitmapDrawable resource;
+        private GlideDrawable resource;
         private Bitmap bitmap;
         private Shot shot;
 
@@ -476,7 +454,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
             this.bitmap = bitmap;
         }
 
-        private StatusBarColorChangeRunnable(BitmapDrawable drawable, Shot shot){
+        private StatusBarColorChangeRunnable(GlideDrawable drawable, Shot shot){
             this.resource = drawable;
             this.shot = shot;
         }
@@ -485,28 +463,37 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         public void run() {
 
             if(bitmap == null){
-                bitmap = resource.getBitmap();
+                if(resource instanceof GlideBitmapDrawable) {
+                    bitmap = ((GlideBitmapDrawable) resource).getBitmap();
+                } else {
+                    bitmap = ((GifDrawable) resource).getFirstFrame();
+
+                }
             }
 
-            Palette palette = Palette.from(bitmap).generate();
 
-            int vibrantSwatch = palette.getVibrantColor(-1);
-            int vibrantLightSwatch = palette.getLightVibrantColor(-1);
-            int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
-            int mutedSwatch = palette.getMutedColor(-1);
-            int mutedLightSwatch = palette.getLightMutedColor(-1);
-            int mutedDarkSwatch = palette.getDarkMutedColor(-1);
+            Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                public void onGenerated(Palette p) {
+                    int [] colors = {
+                            p.getVibrantColor(-1),
+                            p.getLightVibrantColor(-1),
+                            p.getDarkVibrantColor(-1),
+                            p.getMutedColor(-1),
+                            p.getLightMutedColor(-1),
+                            p.getDarkMutedColor(-1)};
 
-            int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable(FeedAdapter.KEY_SHOT, shot);
+                    bundle.putIntArray(mContext.getString(R.string.swatch_colors_key), colors);
 
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(FeedAdapter.KEY_SHOT, shot);
-            bundle.putIntArray(mContext.getString(R.string.swatch_colors_key), colors);
+                    Message message = new Message();
+                    message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+                    message.setData(bundle);
+                    ((MainActivity) mContext).transitionHandler.sendMessage(message);
+                }
+            });
 
-            Message message = new Message();
-            message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
-            message.setData(bundle);
-            ((MainActivity) mContext).transitionHandler.sendMessage(message);
+
 
 //            Message msg = new Message();
 //            Bundle bundle = new Bundle();

@@ -6,10 +6,6 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.drawable.Animatable;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,7 +16,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -38,24 +33,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.load.resource.gif.GifDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
-import com.facebook.common.executors.CallerThreadExecutor;
-import com.facebook.common.references.CloseableReference;
-import com.facebook.datasource.DataSource;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.drawee.controller.ControllerListener;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.facebook.imagepipeline.common.Priority;
-import com.facebook.imagepipeline.core.ImagePipeline;
-import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber;
-import com.facebook.imagepipeline.image.CloseableImage;
-import com.facebook.imagepipeline.image.ImageInfo;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.landkid.said.R;
@@ -142,6 +123,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                                 Window window = getWindow();
                                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                                 window.setStatusBarColor(color + 0xcc000000);
+                                image.setBackgroundColor(color);
                             }
                             break;
                         }
@@ -353,8 +335,6 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                 .load(shot.user.avatar_url)
                 .into(profilePhoto);
 
-        ImagePipeline imagePipeline = Fresco.getImagePipeline();
-
         ImageRequest imageRequest = ImageRequestBuilder
                 .newBuilderWithSource(Uri.parse(shot.images.best()))
                 .setRequestPriority(Priority.HIGH)
@@ -362,60 +342,12 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                 .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
                 .build();
 
-        DataSource<CloseableReference<CloseableImage>> dataSource = imagePipeline.fetchDecodedImage(imageRequest, getApplicationContext());
-
-        try {
-            dataSource.subscribe(new BaseBitmapDataSubscriber() {
-                @Override
-                public void onNewResultImpl(@Nullable Bitmap bitmap) {
-                    if (bitmap == null) {
-                        return;
-                    }
-
-                    new Thread(new StatusBarColorChangeRunnable(bitmap)).start();
-
-                    // The bitmap provided to this method is only guaranteed to be around
-                    // for the lifespan of this method. The image pipeline frees the
-                    // bitmap's memory after this method has completed.
-                    //
-                    // This is fine when passing the bitmap to a system process as
-                    // Android automatically creates a copy.
-                    //
-                    // If you need to keep the bitmap around, look into using a
-                    // BaseDataSubscriber instead of a BaseBitmapDataSubscriber.
-                }
-
-                @Override
-                public void onFailureImpl(DataSource dataSource) {
-                    // No cleanup required here
-                }
-            }, CallerThreadExecutor.getInstance());
-        } finally {
-            if (dataSource != null) {
-                dataSource.close();
-            }
-        }
-
         DraweeController controller = Fresco.newDraweeControllerBuilder()
                 .setImageRequest(imageRequest)
                 .setAutoPlayAnimations(true)
                 .build();
 
         image.setController(controller);
-
-
-//        Glide.with(getApplicationContext())
-//                .load(shot.images.best())
-//                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-//                .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-//                .into(new GlideDrawableImageViewTarget(image){
-//
-//                    @Override
-//                    public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
-//                        super.onResourceReady(resource, animation);
-//                        new Thread(new StatusBarColorChangeRunnable(resource)).start();
-//                    }
-//                });
 
         liked.setScaleX(0);
         liked.setScaleY(0);
@@ -615,46 +547,6 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                     performingLike = false;
                 }
             });
-        }
-    }
-
-    private class StatusBarColorChangeRunnable implements Runnable {
-
-        private GlideBitmapDrawable resource;
-        private Bitmap bitmap;
-
-
-        private StatusBarColorChangeRunnable(Bitmap bitmap){
-            this.bitmap = bitmap;
-        }
-
-        private StatusBarColorChangeRunnable(GlideBitmapDrawable drawable){
-            this.resource = drawable;
-        }
-
-        @Override
-        public void run() {
-
-            if(bitmap == null){
-                bitmap = resource.getBitmap();
-            }
-
-            Palette palette = Palette.from(bitmap).generate();
-
-            int vibrantSwatch = palette.getVibrantColor(-1);
-            int vibrantLightSwatch = palette.getLightVibrantColor(-1);
-            int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
-            int mutedSwatch = palette.getMutedColor(-1);
-            int mutedLightSwatch = palette.getLightMutedColor(-1);
-            int mutedDarkSwatch = palette.getDarkMutedColor(-1);
-
-            int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
-
-            Message msg = new Message();
-            Bundle bundle = new Bundle();
-            bundle.putIntArray(getString(R.string.swatch_colors_key), colors);
-            msg.setData(bundle);
-            colorHandler.sendMessage(msg);
         }
     }
 }
