@@ -2,11 +2,14 @@ package com.landkid.said.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -16,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -25,6 +29,13 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.Priority;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.landkid.said.R;
 import com.landkid.said.data.api.behance.BehancePreferences;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
@@ -32,6 +43,7 @@ import com.landkid.said.data.api.model.behance.Comment;
 import com.landkid.said.data.api.model.behance.Module;
 import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.util.HtmlUtils;
+import com.landkid.said.util.ResourceUtils;
 import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -92,6 +104,8 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
     }
 
     String linkColor;
+    String backgroundColor;
+    String stylesheet;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -105,7 +119,7 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
 
         setContentView(R.layout.activity_behance_project);
         ButterKnife.bind(this);
-
+        Fresco.initialize(this);
         mLlSubArea.setAlpha(0);
         behancePreferences = BehancePreferences.get(getApplicationContext());
 
@@ -155,17 +169,22 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
 
                 Project project = response.body().project;
                 if(project != null) {
+
+                    if(project.styles != null && project.styles.background != null){
+                        if(project.styles.background.get("color") != null){
+                            backgroundColor = project.styles.background.get("color");
+                            mRvModules.setBackgroundColor(Color.parseColor("#" + project.styles.background.get("color")));
+                        }
+                        stylesheet = project.getStylesheetForHtml(getApplicationContext());
+                    }
+
                     bindProject(project);
                     subScrollView.scrollTo(0, 0);
                     mLlSubArea.animate()
                             .alpha(1)
                             .setDuration(300)
                             .start();
-                    if(project.styles != null && project.styles.background != null){
-                        if(project.styles.background.get("color") != null){
-                            mRvModules.setBackgroundColor(Color.parseColor("#" + project.styles.background.get("color")));
-                        }
-                    }
+
                 }
 
             }
@@ -355,8 +374,8 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
             Module module = modules.get(position);
 
             if(module.type.equals("image")){
-                holder.image.setVisibility(View.VISIBLE);
-                holder.text.setVisibility(View.GONE);
+//                holder.image.setVisibility(View.VISIBLE);
+//                holder.text.setVisibility(View.GONE);
 
                 int width = ViewUtils.getScreenWidth(getApplicationContext());
                 int height = (int) (width * module.height / (module.width * 1.0f));
@@ -365,24 +384,106 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
                 holder.image.getLayoutParams().height = height;
                 holder.image.requestLayout();
 
-                Glide.with(getApplicationContext())
-                        .load(module.src)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .override(width, height)
-                        .into(holder.image);
+//                Picasso.with(getApplicationContext())
+//                        .load(module.src)
+//                        .resize(width, height)
+//                        .into(holder.image);
+
+                ImageRequest imageRequest = ImageRequestBuilder
+                        .newBuilderWithSource(Uri.parse(module.src))
+                        .setRequestPriority(Priority.HIGH)
+                        .setProgressiveRenderingEnabled(true)
+                        .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
+                        .build();
+
+                DraweeController controller = Fresco.newDraweeControllerBuilder()
+                        .setImageRequest(imageRequest)
+                        .setAutoPlayAnimations(true)
+                        .build();
+                holder.image.setController(controller);
+
+//                Glide.with(getApplicationContext())
+//                        .load(module.sizes.get("max_1200"))
+//                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+//                        .override(width, height)
+//                        .into(new GlideDrawableImageViewTarget(holder.image));
+
+//                WebView webView = new WebView(getApplicationContext());
+//                ((ViewGroup) holder.itemView).addView(webView);
+//                webView.setBackgroundColor(Color.parseColor("#" + backgroundColor));
+//                webView.setWebChromeClient(new WebChromeClient());
+//                webView.getSettings().setAllowFileAccess(true);
+//                webView.setWebViewClient(new WebViewClient());
+//                webView.getSettings().setLoadWithOverviewMode(true);
+//                webView.getSettings().setUseWideViewPort(true);
+//                webView.getSettings().setTextZoom(200);
+//
+//                webView.loadUrl(module.src);
+//
+//                webView.setWebViewClient(new WebViewClient() {
+//                    @Override
+//                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+//                        Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+//                        browserIntent.setData(request.getUrl());
+//                        startActivity(browserIntent);
+//                        return true;
+//                    }
+//                });
+//
+//                holder.image.setVisibility(View.GONE);
+//                holder.text.setVisibility(View.GONE);
             } else if(module.type.equals("text")){
-                holder.image.setVisibility(View.GONE);
-                holder.text.setVisibility(View.VISIBLE);
+//                holder.image.setVisibility(View.GONE);
+//                holder.text.setVisibility(View.VISIBLE);
 
 //                Elements shotElements =
 //                        Jsoup.parse(holder.text)
-                HtmlUtils.setTextWithLinks(holder.text, HtmlUtils.parseHtml(module.text,
-                        ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
-                        ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
+
+//                ColorStateList linkColorStateList = makeLinkColorStateList(ResourcesCompat.getColor(getResources(), android.R.color.white, getTheme()), Color.parseColor(linkColor));
+//
+//                HtmlUtils.setTextWithLinks(holder.text, HtmlUtils.parseHtml(module.text,
+//                        linkColorStateList,
+//                        Color.parseColor(linkColor)));
+
+//                HtmlUtils.setTextWithLinks(holder.text, HtmlUtils.parseHtml(module.text,
+//                        ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
+//                        ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
+
+                WebView webView = new WebView(getApplicationContext());
+                holder.itemView.setPadding((int) ResourceUtils.dpToPx(15, getApplicationContext()),
+                        (int) ResourceUtils.dpToPx(10, getApplicationContext()),
+                        (int) ResourceUtils.dpToPx(15, getApplicationContext()),
+                        (int) ResourceUtils.dpToPx(10, getApplicationContext()));
+
+                ((ViewGroup) holder.itemView).addView(webView);
+                webView.setBackgroundColor(Color.parseColor("#" + backgroundColor));
+                webView.setWebChromeClient(new WebChromeClient());
+                webView.getSettings().setAllowFileAccess(true);
+                webView.setWebViewClient(new WebViewClient());
+                webView.getSettings().setLoadWithOverviewMode(true);
+                webView.getSettings().setUseWideViewPort(true);
+                webView.getSettings().setTextZoom(200);
+
+                webView.loadData(stylesheet + module.getParsedText(backgroundColor), "text/html", "UTF-8");
+
+                webView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+                        browserIntent.setData(request.getUrl());
+                        startActivity(browserIntent);
+                        return true;
+                    }
+                });
+
+                holder.image.setVisibility(View.GONE);
+                holder.text.setVisibility(View.GONE);
+
             } else if(module.type.equals("embed")){
 
                 WebView webView = new WebView(getApplicationContext());
                 ((ViewGroup) holder.itemView).addView(webView);
+
                 webView.setInitialScale(1);
                 webView.setWebChromeClient(new WebChromeClient());
                 webView.getSettings().setAllowFileAccess(true);
@@ -409,13 +510,25 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
 
     class ModuleViewHolder extends RecyclerView.ViewHolder{
 
-        @BindView(R.id.image) ImageView image;
+        @BindView(R.id.image) SimpleDraweeView image;
         @BindView(R.id.text) TextView text;
 
         public ModuleViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
+    }
 
+    ColorStateList makeLinkColorStateList(int pressedColor, int defaultColor){
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{android.R.attr.state_pressed},
+                        new int[]{}
+                },
+                new int[]{
+                        pressedColor,
+                        defaultColor
+                }
+        );
     }
 }

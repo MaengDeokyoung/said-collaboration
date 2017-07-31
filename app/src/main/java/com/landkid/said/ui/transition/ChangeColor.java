@@ -85,7 +85,6 @@ public class ChangeColor extends Transition {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 int colorInt = (int) valueAnimator.getAnimatedValue();
-                fab.setBackgroundColor(colorInt);
                 fab.setBackgroundTintList(new ColorStateList(new int[][]{
                     new int[]{android.R.attr.state_enabled},
                 }, new int[]{

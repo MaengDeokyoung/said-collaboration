@@ -1,5 +1,6 @@
 package com.landkid.said.data.api.model.behance;
 
+import android.content.Context;
 import android.text.SpannableStringBuilder;
 
 import com.landkid.said.data.api.model.SaidItem;
@@ -43,6 +44,51 @@ public class Project extends SaidItem {
         }
         return tagsSpannableStr.toString();
     }
+
+    public String getStylesheetForHtml(Context context){
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("<style type=\"text/css\">");
+        for (String className : styles.text.keySet()){
+
+            if(className.equals("link")){
+                stringBuilder.append("a");
+                stringBuilder.append("{");
+                for(String attrName : styles.text.get(className).keySet()){
+                    if(attrName.equals("font_family")
+                            || attrName.equals("text_decoration")
+                            || attrName.equals("color")
+                            || attrName.equals("font_style")){
+                        stringBuilder.append(attrName);
+                        stringBuilder.append(":");
+                        stringBuilder.append(styles.text.get(className).get(attrName));
+                        stringBuilder.append(";");
+                    }
+                }
+            } else {
+                stringBuilder.append("." );
+                stringBuilder.append(className);
+                stringBuilder.append("{");
+                for(String attrName : styles.text.get(className).keySet()){
+                    if(attrName.equals("font_family")
+                            || attrName.equals("font_weight")
+                            || attrName.equals("color")
+                            || attrName.equals("font_size")
+                            || attrName.equals("font_style")){
+                        stringBuilder.append(attrName);
+                        stringBuilder.append(":");
+                        stringBuilder.append(styles.text.get(className).get(attrName));
+                        stringBuilder.append(";");
+                    }
+                }
+            }
+
+            stringBuilder.append("}");
+        }
+        stringBuilder.append("</style>");
+
+        return stringBuilder.toString().replace("_", "-");
+    };
 
     public Project(long id, String name, String url) {
         super(id, name, url);

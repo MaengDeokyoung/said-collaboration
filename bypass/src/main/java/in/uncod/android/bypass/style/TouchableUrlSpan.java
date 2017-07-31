@@ -51,7 +51,7 @@ public class TouchableUrlSpan extends URLSpan {
     public void updateDrawState(TextPaint drawState) {
         drawState.setColor(isPressed ? pressedTextColor : normalTextColor);
         drawState.bgColor = isPressed ? pressedBackgroundColor : 0;
-        drawState.setUnderlineText(!isPressed);
+        drawState.setUnderlineText(false);
     }
 
     Creator CREATOR = new Creator() {

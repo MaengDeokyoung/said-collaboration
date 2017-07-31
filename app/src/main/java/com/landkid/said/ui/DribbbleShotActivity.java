@@ -7,6 +7,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Animatable;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +44,20 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
+import com.facebook.common.executors.CallerThreadExecutor;
+import com.facebook.common.references.CloseableReference;
+import com.facebook.datasource.DataSource;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.controller.ControllerListener;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.Priority;
+import com.facebook.imagepipeline.core.ImagePipeline;
+import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber;
+import com.facebook.imagepipeline.image.CloseableImage;
+import com.facebook.imagepipeline.image.ImageInfo;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.landkid.said.R;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.dribbble.Comment;
@@ -88,7 +105,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
     @BindView(R.id.location) TextView location;
 
     @BindView(R.id.sub_image_card) CardView imageCard;
-    @BindView(R.id.sub_image) ImageView image;
+    @BindView(R.id.sub_image) SimpleDraweeView image;
     @BindView(R.id.fab_back) FloatingActionButton fabBack;
     @BindView(R.id.rv_comments) RecyclerView rvComments;
     @BindView(R.id.response_count) TextView responseCount;
@@ -160,6 +177,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
 
         setContentView(R.layout.activity_dribbble_shot);
         ButterKnife.bind(this);
+        Fresco.initialize(this);
 
         dribbblePreferences = DribbblePreferences.get(getApplicationContext());
 
@@ -329,18 +347,69 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                 .load(shot.user.avatar_url)
                 .into(profilePhoto);
 
-        Glide.with(getApplicationContext())
-                .load(shot.images.best())
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                .into(new GlideDrawableImageViewTarget(image){
+        ImagePipeline imagePipeline = Fresco.getImagePipeline();
 
-                    @Override
-                    public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
-                        super.onResourceReady(resource, animation);
-                        new Thread(new StatusBarColorChangeRunnable(resource)).start();
+        ImageRequest imageRequest = ImageRequestBuilder
+                .newBuilderWithSource(Uri.parse(shot.images.best()))
+                .setRequestPriority(Priority.HIGH)
+                .setProgressiveRenderingEnabled(true)
+                .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
+                .build();
+
+        DataSource<CloseableReference<CloseableImage>> dataSource = imagePipeline.fetchDecodedImage(imageRequest, getApplicationContext());
+
+        try {
+            dataSource.subscribe(new BaseBitmapDataSubscriber() {
+                @Override
+                public void onNewResultImpl(@Nullable Bitmap bitmap) {
+                    if (bitmap == null) {
+                        return;
                     }
-                });
+
+                    new Thread(new StatusBarColorChangeRunnable(bitmap)).start();
+
+                    // The bitmap provided to this method is only guaranteed to be around
+                    // for the lifespan of this method. The image pipeline frees the
+                    // bitmap's memory after this method has completed.
+                    //
+                    // This is fine when passing the bitmap to a system process as
+                    // Android automatically creates a copy.
+                    //
+                    // If you need to keep the bitmap around, look into using a
+                    // BaseDataSubscriber instead of a BaseBitmapDataSubscriber.
+                }
+
+                @Override
+                public void onFailureImpl(DataSource dataSource) {
+                    // No cleanup required here
+                }
+            }, CallerThreadExecutor.getInstance());
+        } finally {
+            if (dataSource != null) {
+                dataSource.close();
+            }
+        }
+
+        DraweeController controller = Fresco.newDraweeControllerBuilder()
+                .setImageRequest(imageRequest)
+                .setAutoPlayAnimations(true)
+                .build();
+
+        image.setController(controller);
+
+
+//        Glide.with(getApplicationContext())
+//                .load(shot.images.best())
+//                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+//                .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
+//                .into(new GlideDrawableImageViewTarget(image){
+//
+//                    @Override
+//                    public void onResourceReady(final GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+//                        super.onResourceReady(resource, animation);
+//                        new Thread(new StatusBarColorChangeRunnable(resource)).start();
+//                    }
+//                });
 
         liked.setScaleX(0);
         liked.setScaleY(0);
@@ -545,22 +614,23 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
 
     private class StatusBarColorChangeRunnable implements Runnable {
 
-        private GlideDrawable resource;
+        private Drawable resource;
+        private Bitmap bitmap;
 
-        private StatusBarColorChangeRunnable(GlideDrawable resource){
-            this.resource = resource;
+
+        private StatusBarColorChangeRunnable(Bitmap bitmap){
+            this.bitmap = bitmap;
         }
 
         @Override
         public void run() {
 
-            Bitmap bitmap;
-            if(!(resource instanceof GifDrawable)) {
-                bitmap = ((GlideBitmapDrawable) resource.getCurrent()).getBitmap();
-            }else {
-                GifDrawable gifDrawable = (GifDrawable) resource;
-                bitmap = gifDrawable.getFirstFrame();
-            }
+//            if(!(resource instanceof GifDrawable)) {
+//            }else {
+//
+//                GifDrawable gifDrawable = (GifDrawable) resource;
+//                bitmap = gifDrawable.getFirstFrame();
+//            }
 
             Palette palette = Palette.from(bitmap).generate();
 

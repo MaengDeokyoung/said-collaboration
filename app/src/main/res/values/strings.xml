@@ -18,4 +18,6 @@
     <string name="colors">COLORS</string>
     <string name="swatch_colors_key">swatch_colors_key</string>
 
+    <string name="hours_ago_postfix">%d hours ago</string>
+
 </resources>

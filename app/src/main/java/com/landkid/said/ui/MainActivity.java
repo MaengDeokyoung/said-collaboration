@@ -29,6 +29,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
 import com.landkid.said.R;
 import com.landkid.said.data.api.Router;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
@@ -157,6 +158,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        Fresco.initialize(this);
         setActionBarAndDrawer();
 
 

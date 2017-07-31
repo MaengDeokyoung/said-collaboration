@@ -3,10 +3,7 @@ package com.landkid.said.data.api.behance;
 import android.content.Context;
 
 import com.landkid.said.data.api.BaseDataManager;
-import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.data.api.model.behance.Projects;
-
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;

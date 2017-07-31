@@ -3,6 +3,8 @@ package com.landkid.said.ui;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Animatable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,8 +25,18 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
+import com.bumptech.glide.request.target.Target;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.controller.ControllerListener;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.Priority;
+import com.facebook.imagepipeline.image.ImageInfo;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.landkid.said.R;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.behance.Project;
@@ -81,6 +93,9 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         super.onViewRecycled(feedViewHolder);
         if(feedViewHolder instanceof ItemViewHolder) {
             ((ItemViewHolder) feedViewHolder).isReady = false;
+            if(((ItemViewHolder) feedViewHolder).image != null) {
+
+            }
         }
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
@@ -149,32 +164,94 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                 }
             });
 
+//            ImageRequest imageRequest = ImageRequestBuilder
+//                    .newBuilderWithSource(Uri.parse(shot.images.best()))
+//                    .setRequestPriority(Priority.HIGH)
+//                    .setProgressiveRenderingEnabled(true)
+//                    .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
+//                    .build();
+//
+//
+//            DraweeController controller = Fresco.newDraweeControllerBuilder()
+//                    .setImageRequest(imageRequest)
+//                    .setOldController(holder.image.getController())
+//                    .setAutoPlayAnimations(true)
+//                    .setControllerListener(new ControllerListener<ImageInfo>() {
+//                        @Override
+//                        public void onSubmit(String id, Object callerContext) {
+//
+//                        }
+//
+//                        @Override
+//                        public void onFinalImageSet(String id, ImageInfo imageInfo, Animatable animatable) {
+//                            holder.isReady = true;
+//                        }
+//
+//                        @Override
+//                        public void onIntermediateImageSet(String id, ImageInfo imageInfo) {
+//
+//                        }
+//
+//                        @Override
+//                        public void onIntermediateImageFailed(String id, Throwable throwable) {
+//
+//                        }
+//
+//                        @Override
+//                        public void onFailure(String id, Throwable throwable) {
+//
+//                        }
+//
+//                        @Override
+//                        public void onRelease(String id) {
+//
+//                        }
+//                    })
+//                    .build();
+//            holder.image.setController(controller);
+
             Glide.with(holder.itemView.getContext())
                     .load(shot.images.best())
+                    .asBitmap()
                     .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                    .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
-                    .into(new GlideDrawableImageViewTarget(holder.image) {
+                    .listener(new RequestListener<String, Bitmap>() {
                         @Override
-                        public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
-                            super.onResourceReady(resource, animation);
-                            if (resource instanceof GifDrawable) {
-                                GifDrawable gif = (GifDrawable) resource;
-                                gif.start();
-                            }
-                            holder.isReady = true;
+                        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                            return false;
                         }
-                    });
+
+                        @Override
+                        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            holder.isReady = true;
+                            return false;
+                        }
+                    })
+                    .override(shot.images.bestSize()[0], shot.images.bestSize()[1])
+                    .into(holder.image);
+
+//            new GlideDrawableImageViewTarget(holder.image) {
+//                @Override
+//                public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
+//                    super.onResourceReady(resource, animation);
+//                            if (resource instanceof GifDrawable) {
+//                                GifDrawable gif = (GifDrawable) resource;
+//                                gif.start();
+//                            }
+//                    holder.isReady = true;
+//                }
+//            }
 
             holder.likeCount.setText(String.valueOf(shot.likes_count));
             holder.viewCount.setText(String.valueOf(shot.views_count));
 
             if (shot.created_at != null) {
                 Date today = new Date();
-                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM, YYYY", Locale.ENGLISH);
+                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM", Locale.ENGLISH);
 
                 if (format.format(today).equals(format.format(shot.created_at))) {
                     SimpleDateFormat timeFormat = new SimpleDateFormat("HH", Locale.ENGLISH);
-                    holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(shot.created_at))) + " hours ago");
+                    int differ = Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(shot.created_at));
+                    holder.createAt.setText(String.format(mContext.getString(R.string.hours_ago_postfix), differ));
                 } else {
                     holder.createAt.setText(format.format(shot.created_at));
                 }
@@ -222,11 +299,13 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
             if (createdOn != null) {
                 Date today = new Date();
-                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM, YYYY", Locale.ENGLISH);
+                SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM", Locale.ENGLISH);
 
                 if (format.format(today).equals(format.format(createdOn))) {
                     SimpleDateFormat timeFormat = new SimpleDateFormat("HH", Locale.ENGLISH);
-                    holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(createdOn))) + " hours ago");
+                    int differ = Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(createdOn));
+                    holder.createAt.setText(String.format(mContext.getString(R.string.hours_ago_postfix), differ));
+                    //holder.createAt.setText((Integer.parseInt(timeFormat.format(today)) - Integer.parseInt(timeFormat.format(createdOn))) + " hours ago");
                 } else {
                     holder.createAt.setText(format.format(createdOn));
                 }
@@ -241,18 +320,17 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 //                    Intent i = new Intent(Intent.ACTION_VIEW);
 //                    i.setData(Uri.parse(url));
 //                    mContext.startActivity(i);
-                    Bundle bundle = new Bundle();
-                    bundle.putLong(BehanceProjectActivity.KEY_PROJECT_ID, project.id);
 
-
-                    Message message = new Message();
-                    message.what = MainActivity.TO_BEHANCE_PROJECT_ACTIVITY;
-                    message.setData(bundle);
-                    ((MainActivity) mContext).transitionHandler.sendMessage(message);
                     if (holder.isReady) {
 
+                        Bundle bundle = new Bundle();
+                        bundle.putLong(BehanceProjectActivity.KEY_PROJECT_ID, project.id);
 
 
+                        Message message = new Message();
+                        message.what = MainActivity.TO_BEHANCE_PROJECT_ACTIVITY;
+                        message.setData(bundle);
+                        ((MainActivity) mContext).transitionHandler.sendMessage(message);
 
                         //mContext.startActivity(intent);
                     }
