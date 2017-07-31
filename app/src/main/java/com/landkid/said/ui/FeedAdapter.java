@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
@@ -148,15 +151,16 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                 @Override
                 public void onClick(View v) {
                     if (holder.isReady) {
+                        new Thread(new StatusBarColorChangeRunnable((BitmapDrawable) holder.image.getDrawable(), shot)).start();
 
-                        Bundle bundle = new Bundle();
-                        bundle.putParcelable(KEY_SHOT, shot);
-
-
-                        Message message = new Message();
-                        message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
-                        message.setData(bundle);
-                        ((MainActivity) mContext).transitionHandler.sendMessage(message);
+//                        Bundle bundle = new Bundle();
+//                        bundle.putParcelable(KEY_SHOT, shot);
+//
+//
+//                        Message message = new Message();
+//                        message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+//                        message.setData(bundle);
+//                        ((MainActivity) mContext).transitionHandler.sendMessage(message);
 
 
                         //mContext.startActivity(intent);
@@ -450,6 +454,57 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                 return "image/gif";
             }
             return "image/jpeg";
+        }
+    }
+
+    private class StatusBarColorChangeRunnable implements Runnable {
+
+        private BitmapDrawable resource;
+        private Bitmap bitmap;
+        private Shot shot;
+
+
+        private StatusBarColorChangeRunnable(Bitmap bitmap, Shot shot){
+            this.bitmap = bitmap;
+        }
+
+        private StatusBarColorChangeRunnable(BitmapDrawable drawable, Shot shot){
+            this.resource = drawable;
+            this.shot = shot;
+        }
+
+        @Override
+        public void run() {
+
+            if(bitmap == null){
+                bitmap = resource.getBitmap();
+            }
+
+            Palette palette = Palette.from(bitmap).generate();
+
+            int vibrantSwatch = palette.getVibrantColor(-1);
+            int vibrantLightSwatch = palette.getLightVibrantColor(-1);
+            int vibrantDarkSwatch = palette.getDarkVibrantColor(-1);
+            int mutedSwatch = palette.getMutedColor(-1);
+            int mutedLightSwatch = palette.getLightMutedColor(-1);
+            int mutedDarkSwatch = palette.getDarkMutedColor(-1);
+
+            int [] colors = {vibrantSwatch, vibrantLightSwatch, vibrantDarkSwatch, mutedSwatch, mutedLightSwatch, mutedDarkSwatch};
+
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(FeedAdapter.KEY_SHOT, shot);
+            bundle.putIntArray(mContext.getString(R.string.swatch_colors_key), colors);
+
+            Message message = new Message();
+            message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+            message.setData(bundle);
+            ((MainActivity) mContext).transitionHandler.sendMessage(message);
+
+//            Message msg = new Message();
+//            Bundle bundle = new Bundle();
+//            bundle.putIntArray(getString(R.string.swatch_colors_key), colors);
+//            msg.setData(bundle);
+//            colorHandler.sendMessage(msg);
         }
     }
 }

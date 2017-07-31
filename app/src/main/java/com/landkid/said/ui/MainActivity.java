@@ -347,6 +347,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
                     intent = new Intent(getApplicationContext(), DribbbleShotActivity.class);
                     intent.putExtra(FeedAdapter.KEY_SHOT, data.getParcelable(FeedAdapter.KEY_SHOT));
+                    intent.putExtra(getString(R.string.swatch_colors_key), data.getIntArray(getString(R.string.swatch_colors_key)));
 
                     mFabSearch.getParentButton().setTransitionName(getString(R.string.feed_detail));
 

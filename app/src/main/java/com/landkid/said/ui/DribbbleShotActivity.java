@@ -184,6 +184,12 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
         Intent intent = getIntent();
         final Shot shot = intent.getParcelableExtra(FeedAdapter.KEY_SHOT);
 
+        Message msg = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putIntArray(getString(R.string.swatch_colors_key), intent.getIntArrayExtra(getString(R.string.swatch_colors_key)));
+        msg.setData(bundle);
+        colorHandler.sendMessage(msg);
+
         fabBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -614,7 +620,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
 
     private class StatusBarColorChangeRunnable implements Runnable {
 
-        private Drawable resource;
+        private GlideBitmapDrawable resource;
         private Bitmap bitmap;
 
 
@@ -622,15 +628,16 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
             this.bitmap = bitmap;
         }
 
+        private StatusBarColorChangeRunnable(GlideBitmapDrawable drawable){
+            this.resource = drawable;
+        }
+
         @Override
         public void run() {
 
-//            if(!(resource instanceof GifDrawable)) {
-//            }else {
-//
-//                GifDrawable gifDrawable = (GifDrawable) resource;
-//                bitmap = gifDrawable.getFirstFrame();
-//            }
+            if(bitmap == null){
+                bitmap = resource.getBitmap();
+            }
 
             Palette palette = Palette.from(bitmap).generate();
 
