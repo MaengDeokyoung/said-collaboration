@@ -42,6 +42,7 @@ import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.behance.Comment;
 import com.landkid.said.data.api.model.behance.Module;
 import com.landkid.said.data.api.model.behance.Project;
+import com.landkid.said.ui.widget.DragDismissLayout;
 import com.landkid.said.util.HtmlUtils;
 import com.landkid.said.util.ResourceUtils;
 import com.landkid.said.util.ViewUtils;
@@ -94,6 +95,9 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
     @BindView(R.id.tags) TextView tags;
     @BindView(R.id.tags_title) TextView tagsTitle;
     @BindView(R.id.sub_area) LinearLayout mLlSubArea;
+
+    @BindView(R.id.drag_dismiss_layout) DragDismissLayout dismissLayout;
+
 
     private BehancePreferences behancePreferences;
     private boolean performingLike = false;
@@ -194,6 +198,14 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
                 //bindProject(shot);
             }
         });
+
+        dismissLayout.setOnDragDismissListener(new DragDismissLayout.OnDragDismissListener() {
+            @Override
+            public void onDismiss() {
+                onBackPressed();
+            }
+        });
+
 
     }
 

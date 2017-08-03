@@ -45,6 +45,7 @@ import com.landkid.said.data.api.model.dribbble.Comment;
 import com.landkid.said.data.api.model.dribbble.Like;
 import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.ui.listener.SubScrollListener;
+import com.landkid.said.ui.widget.DragDismissLayout;
 import com.landkid.said.util.HtmlUtils;
 import com.landkid.said.util.interpolator.EaseOutElasticInterpolator;
 import com.landkid.said.util.ResourceUtils;
@@ -98,6 +99,8 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
     @BindView(R.id.fl_like_icon) FrameLayout likeIcon;
     @BindView(R.id.tags) TextView tags;
     @BindView(R.id.tags_title) TextView tagsTitle;
+
+    @BindView(R.id.drag_dismiss_layout) DragDismissLayout dismissLayout;
 
     private DribbblePreferences dribbblePreferences;
     private boolean performingLike = false;
@@ -270,6 +273,13 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
         });
 
         bindShot(shot);
+
+        dismissLayout.setOnDragDismissListener(new DragDismissLayout.OnDragDismissListener() {
+            @Override
+            public void onDismiss() {
+                onBackPressed();
+            }
+        });
 
     }
 
