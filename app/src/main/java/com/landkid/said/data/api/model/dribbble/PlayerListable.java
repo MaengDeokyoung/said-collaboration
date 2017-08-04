@@ -19,6 +19,8 @@ package com.landkid.said.data.api.model.dribbble;
 import java.util.Date;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * An interface for model items that can be displayed as a list of players.
  */
 public interface PlayerListable {

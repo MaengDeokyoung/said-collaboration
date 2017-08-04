@@ -65,7 +65,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 /**
- * Created by sds on 2017. 6. 5..
+ * Created by landkid on 2017. 6. 5..
  */
 
 public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder> {

@@ -42,6 +42,8 @@ import retrofit2.Converter;
 import retrofit2.Retrofit;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Dribbble API does not have a search endpoint so we have to do gross things :(
  */
 public class DribbbleSearchConverter implements Converter<ResponseBody, List<Shot>> {

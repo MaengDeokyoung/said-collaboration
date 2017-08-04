@@ -23,6 +23,8 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 
 /**
+ * Created by https://github.com/nickbutcher/plaid
+ *
  * Utility methods for working with Glide.
  */
 public class GlideUtils {

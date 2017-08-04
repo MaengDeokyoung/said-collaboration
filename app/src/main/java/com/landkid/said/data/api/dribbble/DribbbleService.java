@@ -30,6 +30,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Dribbble API - http://developer.dribbble.com/v1/
  */
 public interface DribbbleService {

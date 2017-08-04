@@ -25,7 +25,7 @@ import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.module.GlideModule;
 
 /**
- * Configure Glide to set desired image quality.
+ * Created by https://github.com/nickbutcher/plaid
  */
 public class GlideConfiguration implements GlideModule {
 

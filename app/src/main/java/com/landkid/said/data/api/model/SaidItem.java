@@ -17,6 +17,8 @@
 package com.landkid.said.data.api.model;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Base class for all model types
  */
 public abstract class SaidItem {

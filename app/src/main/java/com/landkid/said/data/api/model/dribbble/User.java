@@ -25,6 +25,8 @@ import java.util.Date;
 import java.util.Map;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models a dribbble user
  */
 public class User implements Parcelable {

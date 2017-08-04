@@ -7,6 +7,8 @@ import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by landkid on 2017. 6. 1..
  */
 

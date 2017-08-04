@@ -23,6 +23,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 /**
+ * Created by https://github.com/nickbutcher/plaid
+ *
  * A {@see RequestInterceptor} that adds an auth token to requests
  */
 public class AuthInterceptor implements Interceptor {

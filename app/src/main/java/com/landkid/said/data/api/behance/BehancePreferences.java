@@ -31,6 +31,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Storing dribbble user state.
  */
 public class BehancePreferences {

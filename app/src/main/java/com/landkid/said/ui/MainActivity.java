@@ -1,6 +1,5 @@
 package com.landkid.said.ui;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;

@@ -24,6 +24,8 @@ import com.landkid.said.util.ParcelUtils;
 import java.util.Map;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models a Dribbble team.
  */
 public class Team implements Parcelable {

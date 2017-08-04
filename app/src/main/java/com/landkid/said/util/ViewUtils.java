@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by SDS on 2016-11-16.
+ * Created on 2016-11-16.
  */
 public class ViewUtils {
 

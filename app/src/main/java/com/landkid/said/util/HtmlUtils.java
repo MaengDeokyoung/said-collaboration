@@ -19,6 +19,8 @@ import android.widget.TextView;
 import in.uncod.android.bypass.style.TouchableUrlSpan;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by sds on 2017. 7. 25..
  */
 

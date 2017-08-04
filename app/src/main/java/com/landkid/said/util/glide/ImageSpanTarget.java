@@ -33,6 +33,8 @@ import java.lang.ref.WeakReference;
 import in.uncod.android.bypass.style.ImageLoadingSpan;
 
 /**
+ * Created by https://github.com/nickbutcher/plaid
+ *
  * A target that puts a downloaded image into an ImageSpan in the provided TextView.  It uses a
  * {@link ImageLoadingSpan} to mark the area to be replaced by the image.
  */

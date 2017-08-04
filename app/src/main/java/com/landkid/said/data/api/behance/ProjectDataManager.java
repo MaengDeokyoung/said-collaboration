@@ -10,6 +10,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by landkid on 2017. 7. 29..
  */
 

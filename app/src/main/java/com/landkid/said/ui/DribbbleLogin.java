@@ -42,6 +42,9 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+/**
+ * referred from https://github.com/nickbutcher/plaid
+ */
 public class DribbbleLogin extends Activity {
 
     private static final String STATE_LOGIN_FAILED = "loginFailed";

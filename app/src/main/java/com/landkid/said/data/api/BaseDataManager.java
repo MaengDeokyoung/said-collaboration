@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import retrofit2.Call;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by landkid on 2017. 6. 3..
  */
 

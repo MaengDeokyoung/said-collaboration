@@ -21,6 +21,8 @@ import android.support.annotation.Nullable;
 import java.util.Date;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models a like of a Dribbble shot.
  */
 public class Like implements PlayerListable {

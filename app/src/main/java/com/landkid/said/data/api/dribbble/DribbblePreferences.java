@@ -38,7 +38,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Storing dribbble user state.
+ * referred from https://github.com/nickbutcher/plaid
  */
 public class DribbblePreferences {
 

@@ -18,6 +18,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by landkid on 2017. 6. 3..
  */
 

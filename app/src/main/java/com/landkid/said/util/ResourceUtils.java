@@ -8,7 +8,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.util.TypedValue;
 
 /**
- * Created by SDS on 2016-11-16.
+ * Created on 2016-11-16.
  */
 public class ResourceUtils {
 

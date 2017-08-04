@@ -5,6 +5,8 @@ package com.landkid.said.data.api.model.dribbble;
 import java.util.Date;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models a commend on a Dribbble shot.
  */
 public class Comment {

@@ -16,6 +16,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Created by landkid on 2017. 7. 29..
  */
 

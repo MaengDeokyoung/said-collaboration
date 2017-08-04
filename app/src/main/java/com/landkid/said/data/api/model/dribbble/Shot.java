@@ -32,6 +32,8 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models a dibbble shot
  */
 public class Shot extends SaidItem implements Parcelable {

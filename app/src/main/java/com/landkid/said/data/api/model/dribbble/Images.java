@@ -21,6 +21,8 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Models links to the various quality of images of a shot.
  */
 public class Images implements Parcelable {

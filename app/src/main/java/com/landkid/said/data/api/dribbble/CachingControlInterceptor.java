@@ -32,12 +32,10 @@ public class CachingControlInterceptor implements Interceptor {
         if (request.method().equals("GET")) {
             NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
             if (networkInfo != null && networkInfo.isConnected()) {
-                // 1 day
                 request = request.newBuilder()
                         .header("Cache-Control", "only-if-cached")
                         .build();
             } else {
-                // 4 weeks stale
                 request = request.newBuilder()
                         .header("Cache-Control", "public, max-stale=2419200")
                         .build();

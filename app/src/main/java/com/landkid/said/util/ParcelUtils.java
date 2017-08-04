@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * referred from https://github.com/nickbutcher/plaid
+ *
  * Utility methods for working with Parcels.
  */
 public class ParcelUtils {
