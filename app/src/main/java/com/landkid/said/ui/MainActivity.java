@@ -1,6 +1,7 @@
 package com.landkid.said.ui;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
@@ -58,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
     @BindView(R.id.nav_view) NavigationView navView;
 
     private Router router;
+
+    static Handler transitionHandler;
 
     @Override
     public void onFragmentInteraction() {
@@ -318,6 +321,8 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         router.loadPopular();
 
         navView.setNavigationItemSelectedListener(this);
+
+        transitionHandler = new TransitionHandler(this, mFabSearch, router);
         //router.loadProjects();
 
     }
@@ -332,8 +337,62 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
     public static final int TO_BEHANCE_PROJECT_ACTIVITY = 1 << 4;
     public static final int TO_SEARCH_RESULT = 1 << 3;
 
-    @SuppressLint("handlerLeak")
-    final Handler transitionHandler = new Handler(){
+    private static class TransitionHandler extends Handler {
+
+        Context mContext;
+        GooeyFloatingActionButton mFabSearch;
+        Router mRouter;
+
+        TransitionHandler(Context context, GooeyFloatingActionButton fabSearch, Router router){
+            this.mContext = context;
+            this.mFabSearch = fabSearch;
+            this.mRouter = router;
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Bundle data;
+            Intent intent;
+            ActivityOptions options;
+            switch (msg.what){
+                case TO_DRIBBLE_SHOT_ACTIVITY:
+                    data = msg.getData();
+
+                    intent = new Intent(mContext, DribbbleShotActivity.class);
+                    intent.putExtra(FeedAdapter.KEY_SHOT, data.getParcelable(FeedAdapter.KEY_SHOT));
+                    intent.putExtra(mContext.getString(R.string.swatch_colors_key), data.getIntArray(mContext.getString(R.string.swatch_colors_key)));
+
+                    mFabSearch.getParentButton().setTransitionName(mContext.getString(R.string.feed_detail));
+
+                    options = ActivityOptions.makeSceneTransitionAnimation((Activity) mContext, mFabSearch.getParentButton(),
+                            mContext.getString(R.string.feed_detail));
+                    ActivityCompat.startActivity(mContext, intent, options.toBundle());
+                    break;
+                case TO_BEHANCE_PROJECT_ACTIVITY:
+                    data = msg.getData();
+
+                    intent = new Intent(mContext, BehanceProjectActivity.class);
+                    intent.putExtra(BehanceProjectActivity.KEY_PROJECT_ID, data.getLong(BehanceProjectActivity.KEY_PROJECT_ID));
+
+                    mFabSearch.getParentButton().setTransitionName(mContext.getString(R.string.feed_detail));
+
+                    options = ActivityOptions.makeSceneTransitionAnimation((Activity) mContext, mFabSearch.getParentButton(),
+                            mContext.getString(R.string.feed_detail));
+                    ActivityCompat.startActivity(mContext, intent, options.toBundle());
+                    break;
+                case TO_SEARCH_RESULT:
+                    data = msg.getData();
+                    mRouter.search(data.getString(SearchFragment.SEARCH_KEYWORD));
+
+                    break;
+            }
+        }
+    }
+
+
+    /*@SuppressLint("handlerLeak")
+    final static Handler transitionHandler = new Handler(){
 
         @Override
         public void handleMessage(Message msg) {
@@ -374,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                     break;
             }
         }
-    };
+    };*/
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {

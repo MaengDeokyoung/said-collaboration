@@ -11,6 +11,7 @@ import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
@@ -22,6 +23,12 @@ import com.landkid.said.util.ViewUtils;
 
 public class DragDismissLayout extends FrameLayout {
 
+    float startEventX;
+    float startTranslationX;
+    float currentEventX;
+    float previousEventX;
+
+    private static final String TAG = "DragDismissLayout";
     int touchSlop;
     boolean draggingLeft = false;
 
@@ -47,14 +54,6 @@ public class DragDismissLayout extends FrameLayout {
         this.mOnDragDismissListener = onDragDismissListener;
     }
 
-    float startEventX;
-    float startTranslationX;
-    float currentEventX;
-    float previousEventX;
-    float differEventX;
-    float previousTimeMillis;
-    float moveVelocity;
-
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
 
@@ -63,14 +62,10 @@ public class DragDismissLayout extends FrameLayout {
                 final int pointerIndex = ev.getActionIndex();
                 currentEventX = ev.getX(pointerIndex) + getTranslationX() + touchSlop;
 
-                if (currentEventX - startEventX < 0) {
-                    draggingLeft = true;
+                if (currentEventX - startEventX < 0)
                     setTranslationX(currentEventX - startEventX);
-                } else {
-                    draggingLeft = false;
-                }
+
                 previousEventX = currentEventX;
-                previousTimeMillis = SystemClock.uptimeMillis();
                 break;
             }
 
@@ -85,12 +80,7 @@ public class DragDismissLayout extends FrameLayout {
 
                 int screenWidth = ViewUtils.getScreenWidth(getContext());
 
-                moveVelocity = (startEventX - previousEventX) / ((SystemClock.currentThreadTimeMillis() - previousTimeMillis) * 1.0f);
-
-                Log.d("aa", "onTouchEvent: " + moveVelocity + ", " + (startEventX - previousEventX));
-
-                if(!(Math.abs(getTranslationX()) > screenWidth / 2)
-                        && !(Math.abs(differEventX) > 100)){
+                if(!(Math.abs(getTranslationX()) > screenWidth / 3)){
                     animate()
                             .translationX(0)
                             .setDuration(300)
@@ -127,20 +117,12 @@ public class DragDismissLayout extends FrameLayout {
                 final int pointerIndex = ev.getActionIndex();
                 startEventX = ev.getX(pointerIndex);
                 startTranslationX = getTranslationX();
-                previousTimeMillis = SystemClock.currentThreadTimeMillis();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
                 final int pointerIndex = ev.getActionIndex();
                 currentEventX = ev.getX(pointerIndex);
-
-                if (currentEventX - startEventX < - touchSlop) {
-                    draggingLeft = true;
-                    return draggingLeft;
-                } else {
-                    draggingLeft = false;
-                }
-                break;
+                return currentEventX - startEventX < -touchSlop;
             }
         }
 
