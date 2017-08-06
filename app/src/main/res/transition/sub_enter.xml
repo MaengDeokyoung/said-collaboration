@@ -21,7 +21,12 @@
 
     <slide android:slideEdge="right"
         android:duration="500"
-        android:interpolator="@android:interpolator/overshoot">
+        android:interpolator="@interpolator/overshoot_path_interpolator"
+        >
+
+        <!--android:interpolator="@android:interpolator/linear_out_slow_in"-->
+
+
         <targets>
             <target android:excludeId="@android:id/navigationBarBackground" />
             <target android:excludeId="@android:id/statusBarBackground" />

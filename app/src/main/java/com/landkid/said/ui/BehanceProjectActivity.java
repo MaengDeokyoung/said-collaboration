@@ -6,6 +6,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -40,6 +41,7 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.behance.BehancePreferences;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.behance.Comment;
+import com.landkid.said.data.api.model.behance.Component;
 import com.landkid.said.data.api.model.behance.Module;
 import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.ui.widget.DragDismissLayout;
@@ -170,27 +172,27 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
         projectCall.enqueue(new Callback<Project>() {
             @Override
             public void onResponse(Call<Project> call, Response<Project> response) {
+                if(response != null && response.body() != null) {
+                    Project project = response.body().project;
+                    if (project != null) {
 
-                Project project = response.body().project;
-                if(project != null) {
-
-                    if(project.styles != null && project.styles.background != null){
-                        if(project.styles.background.get("color") != null){
-                            backgroundColor = project.styles.background.get("color");
-                            mRvModules.setBackgroundColor(Color.parseColor("#" + project.styles.background.get("color")));
+                        if (project.styles != null && project.styles.background != null) {
+                            if (project.styles.background.get("color") != null) {
+                                backgroundColor = project.styles.background.get("color");
+                                mRvModules.setBackgroundColor(Color.parseColor("#" + project.styles.background.get("color")));
+                            }
+                            stylesheet = project.getStylesheetForHtml(getApplicationContext());
                         }
-                        stylesheet = project.getStylesheetForHtml(getApplicationContext());
+
+                        bindProject(project);
+                        subScrollView.scrollTo(0, 0);
+                        mLlSubArea.animate()
+                                .alpha(1)
+                                .setDuration(300)
+                                .start();
+
                     }
-
-                    bindProject(project);
-                    subScrollView.scrollTo(0, 0);
-                    mLlSubArea.animate()
-                            .alpha(1)
-                            .setDuration(300)
-                            .start();
-
                 }
-
             }
 
             @Override
@@ -227,8 +229,9 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
 
         ((ModulesAdapter) mRvModules.getAdapter()).setModules(project.modules);
 
+
         //TODO
-        designerName.setText(HtmlUtils.fromHtml(project.owners.get(0).first_name + " " + project.owners.get(0).last_name));
+        designerName.setText(HtmlUtils.fromHtml(project.owners.get(0).getFullName()));
         location.setText(project.owners.get(0).location);
 
         if(project.tags != null && project.tags.size() > 0) {
@@ -252,19 +255,21 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
             commentsCall.enqueue(new Callback<Comment>() {
                 @Override
                 public void onResponse(Call<Comment> call, Response<Comment> response) {
+                    if(response != null && response.body() != null) {
 
-                    List<Comment> comments = response.body().comments;
+                        List<Comment> comments = response.body().comments;
 
-                    int commentCount = comments != null ? comments.size() : 0;
-                    if (commentCount > 0)
-                        ((CommentsAdapter) rvComments.getAdapter()).setComments(comments);
+                        int commentCount = comments != null ? comments.size() : 0;
+                        if (commentCount > 0)
+                            ((CommentsAdapter) rvComments.getAdapter()).setComments(comments);
 
-                    if (commentCount > 1)
-                        responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
-                    else if (commentCount == 1)
-                        responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
-                    else if (commentCount == 0)
-                        responseCount.setText(getString(R.string.no_response));
+                        if (commentCount > 1)
+                            responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
+                        else if (commentCount == 1)
+                            responseCount.setText(String.format(getString(R.string.response_count_postfix), commentCount));
+                        else if (commentCount == 0)
+                            responseCount.setText(getString(R.string.no_response));
+                    }
                 }
 
                 @Override
@@ -382,141 +387,128 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
         }
 
         @Override
-        public void onBindViewHolder(ModuleViewHolder holder, int position) {
-            Module module = modules.get(position);
+        public void onBindViewHolder(final ModuleViewHolder holder, int position) {
 
-            if(module.type.equals("image")){
-//                holder.image.setVisibility(View.VISIBLE);
-//                holder.text.setVisibility(View.GONE);
+            final Module module = modules.get(position);
 
-                int width = ViewUtils.getScreenWidth(getApplicationContext());
-                int height = (int) (width * module.height / (module.width * 1.0f));
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    bindModule(holder, module);
+                }
+            }, 300);
 
-                holder.image.getLayoutParams().width = width;
-                holder.image.getLayoutParams().height = height;
-                holder.image.requestLayout();
-
-//                Picasso.with(getApplicationContext())
-//                        .load(module.src)
-//                        .resize(width, height)
-//                        .into(holder.image);
-
-                ImageRequest imageRequest = ImageRequestBuilder
-                        .newBuilderWithSource(Uri.parse(module.src))
-                        .setRequestPriority(Priority.HIGH)
-                        .setProgressiveRenderingEnabled(true)
-                        .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
-                        .build();
-
-                DraweeController controller = Fresco.newDraweeControllerBuilder()
-                        .setImageRequest(imageRequest)
-                        .setAutoPlayAnimations(true)
-                        .build();
-                holder.image.setController(controller);
-
-//                Glide.with(getApplicationContext())
-//                        .load(module.sizes.get("max_1200"))
-//                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-//                        .override(width, height)
-//                        .into(new GlideDrawableImageViewTarget(holder.image));
-
-//                WebView webView = new WebView(getApplicationContext());
-//                ((ViewGroup) holder.itemView).addView(webView);
-//                webView.setBackgroundColor(Color.parseColor("#" + backgroundColor));
-//                webView.setWebChromeClient(new WebChromeClient());
-//                webView.getSettings().setAllowFileAccess(true);
-//                webView.setWebViewClient(new WebViewClient());
-//                webView.getSettings().setLoadWithOverviewMode(true);
-//                webView.getSettings().setUseWideViewPort(true);
-//                webView.getSettings().setTextZoom(200);
-//
-//                webView.loadUrl(module.src);
-//
-//                webView.setWebViewClient(new WebViewClient() {
-//                    @Override
-//                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-//                        Intent browserIntent = new Intent(Intent.ACTION_VIEW);
-//                        browserIntent.setData(request.getUrl());
-//                        startActivity(browserIntent);
-//                        return true;
-//                    }
-//                });
-//
-//                holder.image.setVisibility(View.GONE);
-//                holder.text.setVisibility(View.GONE);
-            } else if(module.type.equals("text")){
-//                holder.image.setVisibility(View.GONE);
-//                holder.text.setVisibility(View.VISIBLE);
-
-//                Elements shotElements =
-//                        Jsoup.parse(holder.text)
-
-//                ColorStateList linkColorStateList = makeLinkColorStateList(ResourcesCompat.getColor(getResources(), android.R.color.white, getTheme()), Color.parseColor(linkColor));
-//
-//                HtmlUtils.setTextWithLinks(holder.text, HtmlUtils.parseHtml(module.text,
-//                        linkColorStateList,
-//                        Color.parseColor(linkColor)));
-
-//                HtmlUtils.setTextWithLinks(holder.text, HtmlUtils.parseHtml(module.text,
-//                        ContextCompat.getColorStateList(getApplicationContext(), R.color.link_text_color),
-//                        ContextCompat.getColor(getApplicationContext(), R.color.colorHeartFilled)));
-
-                WebView webView = new WebView(getApplicationContext());
-                holder.itemView.setPadding((int) ResourceUtils.dpToPx(15, getApplicationContext()),
-                        (int) ResourceUtils.dpToPx(10, getApplicationContext()),
-                        (int) ResourceUtils.dpToPx(15, getApplicationContext()),
-                        (int) ResourceUtils.dpToPx(10, getApplicationContext()));
-
-                ((ViewGroup) holder.itemView).addView(webView);
-                webView.setBackgroundColor(Color.parseColor("#" + backgroundColor));
-                webView.setWebChromeClient(new WebChromeClient());
-                webView.getSettings().setAllowFileAccess(true);
-                webView.setWebViewClient(new WebViewClient());
-                webView.getSettings().setLoadWithOverviewMode(true);
-                webView.getSettings().setUseWideViewPort(true);
-                webView.getSettings().setTextZoom(200);
-
-                webView.loadData(stylesheet + module.getParsedText(backgroundColor), "text/html", "UTF-8");
-
-                webView.setWebViewClient(new WebViewClient() {
-                    @Override
-                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW);
-                        browserIntent.setData(request.getUrl());
-                        startActivity(browserIntent);
-                        return true;
-                    }
-                });
-
-                holder.image.setVisibility(View.GONE);
-                holder.text.setVisibility(View.GONE);
-
-            } else if(module.type.equals("embed")){
-
-                WebView webView = new WebView(getApplicationContext());
-                ((ViewGroup) holder.itemView).addView(webView);
-
-                webView.setInitialScale(1);
-                webView.setWebChromeClient(new WebChromeClient());
-                webView.getSettings().setAllowFileAccess(true);
-                webView.setWebViewClient(new WebViewClient());
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.getSettings().setLoadWithOverviewMode(true);
-                webView.getSettings().setUseWideViewPort(true);
-
-                webView.loadData(module.embed, "text/html", "UTF-8");
-
-                holder.image.setVisibility(View.GONE);
-                holder.text.setVisibility(View.GONE);
-            } else {
-                holder.image.setVisibility(View.GONE);
-                holder.text.setVisibility(View.GONE);
-            }
         }
 
         @Override
         public int getItemCount() {
             return modules.size();
+        }
+
+        private void bindModule(ModuleViewHolder holder, Module module){
+            switch (module.type) {
+                case Module.IMAGE:
+
+                    int width = ViewUtils.getScreenWidth(getApplicationContext());
+                    int height = (int) (width * module.height / (module.width * 1.0f));
+
+                    holder.image.getLayoutParams().width = width;
+                    holder.image.getLayoutParams().height = height;
+                    holder.image.requestLayout();
+
+                    ImageRequest imageRequest = ImageRequestBuilder
+                            .newBuilderWithSource(Uri.parse(module.src))
+                            .setRequestPriority(Priority.HIGH)
+                            .setProgressiveRenderingEnabled(true)
+                            .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
+                            .build();
+
+                    DraweeController controller = Fresco.newDraweeControllerBuilder()
+                            .setImageRequest(imageRequest)
+                            .setAutoPlayAnimations(true)
+                            .build();
+                    holder.image.setController(controller);
+
+                    holder.image.setVisibility(View.VISIBLE);
+                    holder.text.setVisibility(View.GONE);
+                    holder.mediaCollections.setVisibility(View.GONE);
+
+                    break;
+                case Module.TEXT: {
+
+                    WebView webView = new WebView(getApplicationContext());
+                    holder.itemView.setPadding((int) ResourceUtils.dpToPx(15, getApplicationContext()),
+                            (int) ResourceUtils.dpToPx(10, getApplicationContext()),
+                            (int) ResourceUtils.dpToPx(15, getApplicationContext()),
+                            (int) ResourceUtils.dpToPx(10, getApplicationContext()));
+
+                    ((ViewGroup) holder.itemView).addView(webView);
+                    webView.setBackgroundColor(Color.parseColor("#" + backgroundColor));
+                    webView.setWebChromeClient(new WebChromeClient());
+                    webView.getSettings().setAllowFileAccess(true);
+                    webView.setWebViewClient(new WebViewClient());
+                    webView.getSettings().setLoadWithOverviewMode(true);
+                    webView.getSettings().setUseWideViewPort(true);
+                    webView.getSettings().setTextZoom(200);
+
+                    webView.loadData(stylesheet + module.getParsedText(backgroundColor), "text/html", "UTF-8");
+
+                    webView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                            Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+                            browserIntent.setData(request.getUrl());
+                            startActivity(browserIntent);
+                            return true;
+                        }
+                    });
+
+                    holder.image.setVisibility(View.GONE);
+                    holder.text.setVisibility(View.GONE);
+                    holder.mediaCollections.setVisibility(View.GONE);
+
+
+                    break;
+                }
+                case Module.EMBED: {
+
+                    WebView webView = new WebView(getApplicationContext());
+                    ((ViewGroup) holder.itemView).addView(webView);
+
+                    webView.setInitialScale(1);
+                    webView.setWebChromeClient(new WebChromeClient());
+                    webView.getSettings().setAllowFileAccess(true);
+                    webView.setWebViewClient(new WebViewClient());
+                    webView.getSettings().setJavaScriptEnabled(true);
+                    webView.getSettings().setLoadWithOverviewMode(true);
+                    webView.getSettings().setUseWideViewPort(true);
+
+                    webView.loadData(module.embed, "text/html", "UTF-8");
+
+                    holder.image.setVisibility(View.GONE);
+                    holder.text.setVisibility(View.GONE);
+                    holder.mediaCollections.setVisibility(View.GONE);
+
+                    break;
+                }
+                case Module.MEDIA_COLLECTION: {
+
+                    holder.mediaCollections.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+                    holder.mediaCollections.setAdapter(new MediaCollectionAdapter(getApplicationContext()));
+                    MediaCollectionAdapter mediaCollectionAdapter = (MediaCollectionAdapter) holder.mediaCollections.getAdapter();
+                    mediaCollectionAdapter.setComponent(module.components);
+
+                    holder.image.setVisibility(View.GONE);
+                    holder.text.setVisibility(View.GONE);
+                    holder.mediaCollections.setVisibility(View.VISIBLE);
+                    break;
+                }
+                default:
+                    holder.image.setVisibility(View.GONE);
+                    holder.text.setVisibility(View.GONE);
+                    holder.mediaCollections.setVisibility(View.GONE);
+                    break;
+            }
         }
     }
 
@@ -524,8 +516,9 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
 
         @BindView(R.id.image) SimpleDraweeView image;
         @BindView(R.id.text) TextView text;
+        @BindView(R.id.media_collections) RecyclerView mediaCollections;
 
-        public ModuleViewHolder(View itemView) {
+        ModuleViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
@@ -542,5 +535,68 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
                         defaultColor
                 }
         );
+    }
+
+    private class MediaCollectionAdapter extends RecyclerView.Adapter<MediaCollectionViewHolder>{
+
+        private final Context mContext;
+        private List<Component> components;
+
+        MediaCollectionAdapter(Context context) {
+            mContext = context;
+            components = new ArrayList<>();
+        }
+
+        void setComponent(List<Component> components){
+            this.components = components;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public MediaCollectionViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.item_media_collection, parent, false);
+            return new MediaCollectionViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(MediaCollectionViewHolder holder, int position) {
+            Component component = components.get(position);
+
+            int width = ViewUtils.getScreenWidth(getApplicationContext());
+            int height = (int) (width * component.source_height / (component.source_width * 1.0f));
+
+            holder.image.getLayoutParams().width = width;
+            holder.image.getLayoutParams().height = height;
+            holder.image.requestLayout();
+
+            ImageRequest imageRequest = ImageRequestBuilder
+                    .newBuilderWithSource(Uri.parse(component.src))
+                    .setRequestPriority(Priority.HIGH)
+                    .setProgressiveRenderingEnabled(true)
+                    .setLowestPermittedRequestLevel(ImageRequest.RequestLevel.FULL_FETCH)
+                    .build();
+
+            DraweeController controller = Fresco.newDraweeControllerBuilder()
+                    .setImageRequest(imageRequest)
+                    .setAutoPlayAnimations(true)
+                    .build();
+            holder.image.setController(controller);
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return components.size();
+        }
+    }
+
+    class MediaCollectionViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.image) SimpleDraweeView image;
+
+        MediaCollectionViewHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
+
+        }
     }
 }

@@ -20,6 +20,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unchecked")
 public abstract class Router {
 
     @Mode
@@ -34,6 +35,8 @@ public abstract class Router {
     private static final String SEARCH_HEADER_PREFIX = "Searched By: ";
     private final Context mContext;
     private final InfiniteScrollListener infiniteScrollListener;
+    private List<SaidItem> skeletonArray;
+
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
@@ -63,6 +66,7 @@ public abstract class Router {
         infiniteScrollListener = new InfiniteScrollListener() {
             @Override
             public void onLoadMore() {
+                showProgress();
                 if (!isModeChanging) {
                     switch (mode) {
                         case MODE_POPULAR:
@@ -113,22 +117,41 @@ public abstract class Router {
                 return BEHANCE_PROJECTS_HEADER;
         }
         return "";
-    };
+    }
 
     private void loadStarted(String mode) {
         BaseDataManager.loadCancel();
         String headerTitle = getHeaderTitleByMode(mode);
-        Shot shot = new Shot();
-        shot.headerTitle = headerTitle;
-        shot.isHeaderItem = true;
-        List<Shot> initShots = new ArrayList<>();
-        initShots.add(0, shot);
-        mFeedAdapter.setItems(initShots);
 
-        onStart(mode);
+        SaidItem saidItem = SaidItem.getHeaderInstance(headerTitle);
+        List<SaidItem> headerItem = new ArrayList<>();
+        headerItem.add(0, saidItem);
+
+        mFeedAdapter.setItems(headerItem);
+        showProgress();
+        onLoadStarted(mode);
     }
 
-    public abstract void onStart(@Mode String mode);
+    private void showProgress(){
+
+        if(skeletonArray == null) {
+            skeletonArray = new ArrayList<>();
+
+            for (int i = 0; i < 3; i++) {
+                SaidItem skeletonItem = SaidItem.getSkeletonInstance();
+                skeletonArray.add(skeletonItem);
+            }
+        }
+        mFeedAdapter.addItems(skeletonArray);
+    }
+
+    private void hideProgress(){
+        if(skeletonArray != null) {
+            mFeedAdapter.removeItems(skeletonArray);
+        }
+    }
+
+    public abstract void onLoadStarted(@Mode String mode);
 
     public abstract void onDataLoaded(@Mode String mode, List<? extends SaidItem> data);
 
@@ -139,8 +162,9 @@ public abstract class Router {
                 @Override
                 public void onDataLoaded(List<Shot> items) {
 
-                    mFeedAdapter.addShots(items);
+                    mFeedAdapter.addItems(items);
                     isModeChanging = false;
+                    hideProgress();
                     Router.this.onDataLoaded(mode, items);
                 }
             };
@@ -150,7 +174,6 @@ public abstract class Router {
     }
 
     public void search(String keyword){
-        //mTvSearchKeyword.setText(Html.fromHtml("Search by <a href=\"\"'>" + mQuerySearched + "</href>"));
         mQuerySearched = keyword;
         if(searchDataManager == null) {
             searchDataManager = new SearchDataManager(mContext) {
@@ -163,14 +186,15 @@ public abstract class Router {
                     }
                     if (!mode.equals(MODE_SEARCH) ||
                             (mode.equals(MODE_SEARCH) && mPreviousQuerySearched.equals(mQuerySearched))) {
-                        mFeedAdapter.addShots(shots);
+                        mFeedAdapter.addItems(shots);
                         mPreviousQuerySearched = mQuerySearched;
                         mode = MODE_SEARCH;
                         mRvFeeds.scrollBy(0, -mRvFeeds.computeVerticalScrollOffset());
                     } else {
-                        mFeedAdapter.addShots(shots);
+                        mFeedAdapter.addItems(shots);
                     }
                     isModeChanging = false;
+                    hideProgress();
                     Router.this.onDataLoaded(mode, shots);
                 }
             };
@@ -189,8 +213,9 @@ public abstract class Router {
 
                     List<Project> projects = items.projects;
 
-                    mFeedAdapter.addShots(projects);
+                    mFeedAdapter.addItems(projects);
                     isModeChanging = false;
+                    hideProgress();
                     Router.this.onDataLoaded(mode, projects);
                 }
             };

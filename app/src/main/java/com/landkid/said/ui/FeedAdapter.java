@@ -1,20 +1,13 @@
 package com.landkid.said.ui;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.ColorMatrixColorFilter;
-import android.graphics.drawable.Animatable;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
@@ -38,14 +31,6 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.bumptech.glide.request.target.Target;
-import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.drawee.controller.ControllerListener;
-import com.facebook.drawee.interfaces.DraweeController;
-import com.facebook.drawee.view.SimpleDraweeView;
-import com.facebook.imagepipeline.common.Priority;
-import com.facebook.imagepipeline.image.ImageInfo;
-import com.facebook.imagepipeline.request.ImageRequest;
-import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.landkid.said.R;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.behance.Project;
@@ -85,16 +70,21 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         notifyDataSetChanged();
     }
 
-    public void addShots(List<SI> shots) {
+    public void addItems(List<SI> items) {
 
 //        int previousShotLength = items.size();
 //        for (SaidItem shot : items) {
 //            this.items.add((Shot) shot);
 //        }
 //        notifyItemRangeInserted(previousShotLength, previousShotLength + items.size() - 1);
-        for (SI shot : shots) {
+        for (SI shot : items) {
             this.items.add(shot);
         }
+        notifyDataSetChanged();
+    }
+
+    public void removeItems(List<SI> items){
+        this.items.removeAll(items);
         notifyDataSetChanged();
     }
 
@@ -110,14 +100,17 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
-    private static final int TYPE_HEADER = 1;
     private static final int TYPE_ITEM = 0;
+    private static final int TYPE_HEADER = 1;
+    private static final int TYPE_SKELETON = 2;
 
     @Override
     public int getItemViewType(int position) {
 
         if(items.get(position).isHeaderItem){
             return TYPE_HEADER;
+        } else if(items.get(position).isSkeletonItem){
+            return TYPE_SKELETON;
         } else {
             return TYPE_ITEM;
         }
@@ -130,10 +123,15 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         View view;
         switch (viewType){
             case TYPE_HEADER:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_header, parent, false);
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_feed_header, parent, false);
                 return new HeaderViewHolder(view);
+
+            case TYPE_SKELETON:
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_feed_skeleton, parent, false);
+                return new SkeletonViewHolder(view);
+
             default:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_feed, parent, false);
                 return new ItemViewHolder(view);
         }
 
@@ -141,22 +139,44 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
     @Override
     public void onBindViewHolder(FeedViewHolder feedViewHolder, int position) {
+
+        if (getItemViewType(position) == TYPE_HEADER) {
+
+            SaidItem saidItem = items.get(position);
+
+            HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
+            headerViewHolder.header.setText(saidItem.headerTitle);
+            return;
+        }
+
+        if(getItemViewType(position) == TYPE_SKELETON){
+            return;
+        }
+
         if(items.get(position) instanceof Shot) {
             final Shot shot = (Shot) items.get(position);
-
-            if (getItemViewType(position) == TYPE_HEADER) {
-                HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
-                headerViewHolder.header.setText(shot.headerTitle);
-                return;
-            }
 
             final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
 
             holder.username.setText(HtmlUtils.fromHtml(shot.user.name));
 
             holder.image.setOnClickListener(new View.OnClickListener() {
+
+                private static final long MIN_CLICK_INTERVAL = 600;
+
+                private long mLastClickTime;
+
                 @Override
                 public void onClick(View v) {
+
+                    long currentClickTime = SystemClock.uptimeMillis();
+                    long elapsedTime = currentClickTime - mLastClickTime;
+                    mLastClickTime = currentClickTime;
+
+                    if(elapsedTime <= MIN_CLICK_INTERVAL){
+                        return;
+                    }
+
                     if (holder.isReady) {
                         Bitmap bitmap;
                         if(holder.image.getDrawable() instanceof GlideBitmapDrawable) {
@@ -218,18 +238,6 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                 holder.gifIndicator.setVisibility(View.GONE);
             }
 
-//            new GlideDrawableImageViewTarget(holder.image) {
-//                @Override
-//                public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> animation) {
-//                    super.onResourceReady(resource, animation);
-//                            if (resource instanceof GifDrawable) {
-//                                GifDrawable gif = (GifDrawable) resource;
-//                                gif.start();
-//                            }
-//                    holder.isReady = true;
-//                }
-//            }
-
             holder.likeCount.setText(String.valueOf(shot.likes_count));
             holder.viewCount.setText(String.valueOf(shot.views_count));
 
@@ -259,15 +267,9 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         } else if (items.get(position) instanceof Project){
             final Project project = (Project) items.get(position);
 
-            if (getItemViewType(position) == TYPE_HEADER) {
-                HeaderViewHolder headerViewHolder = (HeaderViewHolder) feedViewHolder;
-                headerViewHolder.header.setText(project.headerTitle);
-                return;
-            }
-
             final ItemViewHolder holder = (ItemViewHolder) feedViewHolder;
 
-            holder.username.setText(HtmlUtils.fromHtml(project.name));
+            holder.username.setText(HtmlUtils.fromHtml(project.owners.get(0).getFullName()));
 
             Glide.with(holder.itemView.getContext())
                     .load(project.covers.get("404"))
@@ -304,24 +306,31 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
             final String url = project.url;
             holder.image.setOnClickListener(new View.OnClickListener() {
+
+                private static final long MIN_CLICK_INTERVAL = 600;
+
+                private long mLastClickTime;
+
                 @Override
-                public void onClick(View view) {
-//                    Intent i = new Intent(Intent.ACTION_VIEW);
-//                    i.setData(Uri.parse(url));
-//                    mContext.startActivity(i);
+                public void onClick(View v) {
+
+                    long currentClickTime = SystemClock.uptimeMillis();
+                    long elapsedTime = currentClickTime - mLastClickTime;
+                    mLastClickTime = currentClickTime;
+
+                    if(elapsedTime <= MIN_CLICK_INTERVAL){
+                        return;
+                    }
 
                     if (holder.isReady) {
 
                         Bundle bundle = new Bundle();
                         bundle.putLong(BehanceProjectActivity.KEY_PROJECT_ID, project.id);
 
-
                         Message message = new Message();
                         message.what = MainActivity.TO_BEHANCE_PROJECT_ACTIVITY;
                         message.setData(bundle);
                         ((MainActivity) mContext).transitionHandler.sendMessage(message);
-
-                        //mContext.startActivity(intent);
                     }
 
                 }
@@ -368,6 +377,14 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         }
 
     }
+
+    static class SkeletonViewHolder extends FeedViewHolder {
+
+        SkeletonViewHolder(View itemView){
+            super(itemView);
+        }
+    }
+
 
     static class HeaderViewHolder extends FeedViewHolder {
 
@@ -492,14 +509,6 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                     ((MainActivity) mContext).transitionHandler.sendMessage(message);
                 }
             });
-
-
-
-//            Message msg = new Message();
-//            Bundle bundle = new Bundle();
-//            bundle.putIntArray(getString(R.string.swatch_colors_key), colors);
-//            msg.setData(bundle);
-//            colorHandler.sendMessage(msg);
         }
     }
 }

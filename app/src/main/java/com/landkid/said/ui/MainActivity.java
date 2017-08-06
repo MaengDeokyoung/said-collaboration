@@ -34,6 +34,7 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.Router;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.SaidItem;
+import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.ui.widget.GooeyFloatingActionButton;
 import com.landkid.said.util.ViewUtils;
@@ -141,8 +142,19 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         super.attachBaseContext(TypekitContextWrapper.wrap(newBase));
 
     }
+    List<Shot> skeletonArray;
 
     void showProgress(int gravity){
+
+        if(skeletonArray == null) {
+            for (int i = 0; i < 2; i++) {
+                Shot shot = new Shot();
+                shot.isSkeletonItem = true;
+                skeletonArray = new ArrayList<>();
+            }
+
+        }
+
         ((FrameLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
         mPbLoading.setVisibility(View.VISIBLE);
         mPbLoading.requestLayout();
@@ -237,7 +249,9 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 FeedAdapter.FeedViewHolder holder = (FeedAdapter.FeedViewHolder) parent.getChildViewHolder(view);
                 int position = holder.getAdapterPosition();
 
-                outRect.top = (int) (20 * getResources().getDisplayMetrics().density);
+                if(position > 0) {
+                    outRect.top = (int) (20 * getResources().getDisplayMetrics().density);
+                }
 
                 if(position == parent.getAdapter().getItemCount() - 1) {
                     outRect.bottom = (int) (150 * getResources().getDisplayMetrics().density);
@@ -266,8 +280,10 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         router = new Router(getApplicationContext(), mRvFeeds) {
 
             @Override
-            public void onStart(@Mode String mode) {
-                showProgress(Gravity.CENTER);
+            public void onLoadStarted(@Mode String mode) {
+                //showProgress(Gravity.CENTER);
+                mPbLoading.setVisibility(View.GONE);
+
             }
 
             @Override
@@ -325,6 +341,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         //router.loadProjects();
 
     }
+
     DribbblePreferences dribbblePreferences;
 
     @Override
@@ -388,51 +405,6 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
             }
         }
     }
-
-
-    /*@SuppressLint("handlerLeak")
-    final static Handler transitionHandler = new Handler(){
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            Bundle data;
-            Intent intent;
-            ActivityOptions options;
-            switch (msg.what){
-                case TO_DRIBBLE_SHOT_ACTIVITY:
-                    data = msg.getData();
-
-                    intent = new Intent(getApplicationContext(), DribbbleShotActivity.class);
-                    intent.putExtra(FeedAdapter.KEY_SHOT, data.getParcelable(FeedAdapter.KEY_SHOT));
-                    intent.putExtra(getString(R.string.swatch_colors_key), data.getIntArray(getString(R.string.swatch_colors_key)));
-
-                    mFabSearch.getParentButton().setTransitionName(getString(R.string.feed_detail));
-
-                    options = ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, mFabSearch.getParentButton(),
-                            getString(R.string.feed_detail));
-                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
-                    break;
-                case TO_BEHANCE_PROJECT_ACTIVITY:
-                    data = msg.getData();
-
-                    intent = new Intent(getApplicationContext(), BehanceProjectActivity.class);
-                    intent.putExtra(BehanceProjectActivity.KEY_PROJECT_ID, data.getLong(BehanceProjectActivity.KEY_PROJECT_ID));
-
-                    mFabSearch.getParentButton().setTransitionName(getString(R.string.feed_detail));
-
-                    options = ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, mFabSearch.getParentButton(),
-                            getString(R.string.feed_detail));
-                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
-                    break;
-                case TO_SEARCH_RESULT:
-                    data = msg.getData();
-                    router.search(data.getString(SearchFragment.SEARCH_KEYWORD));
-
-                    break;
-            }
-        }
-    };*/
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {

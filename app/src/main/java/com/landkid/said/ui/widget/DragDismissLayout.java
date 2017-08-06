@@ -80,7 +80,7 @@ public class DragDismissLayout extends FrameLayout {
 
                 int screenWidth = ViewUtils.getScreenWidth(getContext());
 
-                if(!(Math.abs(getTranslationX()) > screenWidth / 3)){
+                if(!(Math.abs(getTranslationX()) > screenWidth / 4)){
                     animate()
                             .translationX(0)
                             .setDuration(300)

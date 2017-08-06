@@ -242,7 +242,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                             commentCount.setText(String.format(getString(R.string.number), valueAnimator.getAnimatedValue()));
                         }
                     });
-                    commentCountAnimator.setStartDelay(200);
+                    commentCountAnimator.setStartDelay(300);
                     commentCountAnimator.setDuration(300);
                     commentCountAnimator.start();
 
@@ -255,7 +255,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
                             viewCount.setText(String.format(getString(R.string.number), valueAnimator.getAnimatedValue()));
                         }
                     });
-                    viewCountAnimator.setStartDelay(400);
+                    viewCountAnimator.setStartDelay(600);
                     viewCountAnimator.setDuration(300);
                     viewCountAnimator.start();
 

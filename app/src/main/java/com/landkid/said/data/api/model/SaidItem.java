@@ -21,14 +21,28 @@ package com.landkid.said.data.api.model;
  *
  * Base class for all model types
  */
-public abstract class SaidItem {
+public class SaidItem {
 
     public final long id;
     public final String title;
     public String url; // can't be final as some APIs use different serialized names
 
     public boolean isHeaderItem = false;
-    public String headerTitle = "Popular Shots";
+    public boolean isSkeletonItem = false;
+    public String headerTitle;
+
+    public static SaidItem getHeaderInstance(String headerTitle){
+        SaidItem instance = new SaidItem(-1, null, null);
+        instance.isHeaderItem = true;
+        instance.headerTitle = headerTitle;
+        return instance;
+    }
+
+    public static SaidItem getSkeletonInstance(){
+        SaidItem instance = new SaidItem(-1, null, null);
+        instance.isSkeletonItem = true;
+        return instance;
+    }
 
     public SaidItem(long id,
                     String title,

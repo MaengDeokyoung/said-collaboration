@@ -30,6 +30,10 @@ public class User implements Parcelable {
     public String website;
     public Stats stats;
 
+    public String getFullName(){
+        return first_name + " " + last_name;
+    }
+
     public User(Parcel in) {
 
     }
