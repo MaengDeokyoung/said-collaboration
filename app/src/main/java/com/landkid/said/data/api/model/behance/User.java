@@ -60,4 +60,42 @@ public class User implements Parcelable {
             return new User[size];
         }
     };
+
+    public User(long id,
+                String first_name,
+                String last_name,
+                String username,
+                String city,
+                String state,
+                String country,
+                String location,
+                String company,
+                String occupation,
+                long created_on,
+                String url,
+                Map<String, String> images,
+                String display_name,
+                List<String> fields,
+                int has_default_image,
+                String website,
+                Stats stats) {
+        this.id = id;
+        this.first_name = first_name;
+        this.last_name = last_name;
+        this.username = username;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.location = location;
+        this.company = company;
+        this.occupation = occupation;
+        this.created_on = created_on;
+        this.url = url;
+        this.images = images;
+        this.display_name = display_name;
+        this.fields = fields;
+        this.has_default_image = has_default_image;
+        this.website = website;
+        this.stats = stats;
+    }
 }

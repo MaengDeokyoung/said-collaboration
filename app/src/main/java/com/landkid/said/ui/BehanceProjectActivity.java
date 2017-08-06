@@ -10,7 +10,6 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,7 +20,6 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
@@ -29,8 +27,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
@@ -50,9 +46,6 @@ import com.landkid.said.util.ResourceUtils;
 import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
-
-import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -451,7 +444,7 @@ public class BehanceProjectActivity extends AppCompatActivity implements View.On
                     webView.getSettings().setUseWideViewPort(true);
                     webView.getSettings().setTextZoom(200);
 
-                    webView.loadData(stylesheet + module.getParsedText(backgroundColor), "text/html", "UTF-8");
+                    webView.loadData(stylesheet + module.getParsedText(), "text/html", "UTF-8");
 
                     webView.setWebViewClient(new WebViewClient() {
                         @Override

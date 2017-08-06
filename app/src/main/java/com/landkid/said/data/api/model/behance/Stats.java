@@ -15,4 +15,15 @@ public class Stats {
     public int followers;
     public int following;
 
+    public Stats(int views,
+                 int appreciations,
+                 int comments,
+                 int followers,
+                 int following) {
+        this.views = views;
+        this.appreciations = appreciations;
+        this.comments = comments;
+        this.followers = followers;
+        this.following = following;
+    }
 }

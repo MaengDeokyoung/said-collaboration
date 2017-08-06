@@ -44,16 +44,42 @@ public class Module {
     public String collection_type;
 
 
-    public String getParsedText(String backgroundColor){
+    public String getParsedText(){
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<body>");
-
-//        stringBuilder.append("<body style=\"background-color:#");
-//        stringBuilder.append(backgroundColor);
-//        stringBuilder.append(";\"/>");
         stringBuilder.append(text);
         stringBuilder.append("</body>");
         return stringBuilder.toString();
+    }
+
+    public Module(String type,
+                  String text,
+                  String src,
+                  String embed,
+                  String text_plain,
+                  int width,
+                  int height,
+                  Map<String, String> sizes,
+                  List<Component> components,
+                  String alignment,
+                  String caption_alignment,
+                  String caption,
+                  String sort_type,
+                  String collection_type) {
+        this.type = type;
+        this.text = text;
+        this.src = src;
+        this.embed = embed;
+        this.text_plain = text_plain;
+        this.width = width;
+        this.height = height;
+        this.sizes = sizes;
+        this.components = components;
+        this.alignment = alignment;
+        this.caption_alignment = caption_alignment;
+        this.caption = caption;
+        this.sort_type = sort_type;
+        this.collection_type = collection_type;
     }
 }

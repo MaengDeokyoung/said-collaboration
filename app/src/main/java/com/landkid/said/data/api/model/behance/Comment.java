@@ -14,4 +14,13 @@ public class Comment {
     public String comment;
     public long created_on;
 
+    public Comment(List<Comment> comments,
+                   User user,
+                   String comment,
+                   long created_on) {
+        this.comments = comments;
+        this.user = user;
+        this.comment = comment;
+        this.created_on = created_on;
+    }
 }

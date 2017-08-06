@@ -8,7 +8,7 @@ import java.util.List;
  * Created by landkid on 2017. 7. 30..
  */
 
-    public class Projects {
+public class Projects {
 
     @SerializedName("projects")
     public List<Project> projects;

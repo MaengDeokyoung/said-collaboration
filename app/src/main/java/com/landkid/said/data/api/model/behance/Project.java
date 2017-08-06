@@ -94,4 +94,46 @@ public class Project extends SaidItem {
         super(id, name, url);
     }
 
+    public Project(long id,
+                   String name,
+                   String url,
+                   Project project,
+                   long published_on,
+                   long created_on,
+                   long modified_on,
+                   String privacy,
+                   List<String> fields,
+                   List<String> tags,
+                   Map<String, String> covers,
+                   int mature_content,
+                   String mature_access,
+                   List<User> owners,
+                   Stats stats,
+                   int conceived_on,
+                   List<Feature> features,
+                   List<Color> colors,
+                   String description,
+                   List<Module> modules,
+                   Styles styles) {
+        super(id, name, url);
+        this.project = project;
+        this.name = name;
+        this.published_on = published_on;
+        this.created_on = created_on;
+        this.modified_on = modified_on;
+        this.privacy = privacy;
+        this.fields = fields;
+        this.tags = tags;
+        this.covers = covers;
+        this.mature_content = mature_content;
+        this.mature_access = mature_access;
+        this.owners = owners;
+        this.stats = stats;
+        this.conceived_on = conceived_on;
+        this.features = features;
+        this.colors = colors;
+        this.description = description;
+        this.modules = modules;
+        this.styles = styles;
+    }
 }
