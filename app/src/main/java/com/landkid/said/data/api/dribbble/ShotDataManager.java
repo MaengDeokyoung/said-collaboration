@@ -2,20 +2,14 @@ package com.landkid.said.data.api.dribbble;
 
 import android.content.Context;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.landkid.said.BuildConfig;
 import com.landkid.said.data.api.BaseDataManager;
 import com.landkid.said.data.api.model.dribbble.Shot;
 
 import java.util.List;
 
-import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * referred from https://github.com/nickbutcher/plaid
@@ -25,14 +19,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public abstract class ShotDataManager extends BaseDataManager<List<Shot>> {
 
-    DribbbleService dribbbleService;
-    Context mContext;
-    static final String SOURCE_DRIBBBLE_POPULAR = "SOURCE_DRIBBBLE_POPULAR";
+    private DribbbleService dribbbleService;
 
-
-    public ShotDataManager(Context context){
+    protected ShotDataManager(Context context){
         super();
-        mContext = context;
         dribbbleService = DribbblePreferences.get(context).getApi();
         resetNextPageIndexes();
     }
@@ -47,8 +37,6 @@ public abstract class ShotDataManager extends BaseDataManager<List<Shot>> {
                 if (response.isSuccessful()) {
                     updatePageIndexes();
                     onDataLoaded(response.body());
-                } else {
-
                 }
                 loadFinished();
                 inflight.remove(call);

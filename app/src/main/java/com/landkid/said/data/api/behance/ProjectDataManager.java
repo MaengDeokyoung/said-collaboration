@@ -37,8 +37,6 @@ public abstract class ProjectDataManager extends BaseDataManager<Projects> {
                 if (response.isSuccessful()) {
                     updatePageIndexes();
                     onDataLoaded(response.body());
-                } else {
-
                 }
                 loadFinished();
                 inflight.remove(call);

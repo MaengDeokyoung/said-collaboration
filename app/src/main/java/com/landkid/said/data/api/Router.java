@@ -176,7 +176,7 @@ public abstract class Router {
     public void search(String keyword){
         mQuerySearched = keyword;
         if(searchDataManager == null) {
-            searchDataManager = new SearchDataManager(mContext) {
+            searchDataManager = new SearchDataManager() {
                 @Override
                 public void onDataLoaded(List<Shot> items) {
 

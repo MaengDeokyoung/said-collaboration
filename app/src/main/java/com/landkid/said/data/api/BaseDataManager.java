@@ -1,8 +1,6 @@
 package com.landkid.said.data.api;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import retrofit2.Call;
@@ -15,8 +13,8 @@ import retrofit2.Call;
 
 public abstract class BaseDataManager<T> {
 
-    protected AtomicInteger loadingCount = new AtomicInteger(0);
-    protected ArrayList<Integer> mPageIndexes;
+    private AtomicInteger loadingCount = new AtomicInteger(0);
+    private ArrayList<Integer> mPageIndexes;
     protected static ArrayList<Call> inflight;
 
     protected BaseDataManager(){
@@ -26,7 +24,7 @@ public abstract class BaseDataManager<T> {
 
     public abstract void onDataLoaded(T items);
 
-    protected static void loadCancel(){
+    static void loadCancel(){
         for(Call call : inflight){
             call.cancel();
         }

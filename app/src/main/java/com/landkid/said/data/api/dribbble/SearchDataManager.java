@@ -7,12 +7,10 @@ import com.landkid.said.data.api.model.dribbble.Shot;
 
 import java.util.List;
 
-import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * referred from https://github.com/nickbutcher/plaid
@@ -22,18 +20,16 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public abstract class SearchDataManager extends BaseDataManager<List<Shot>> {
 
-    DribbbleSearchService dribbbleSearchService;
-    Context mContext;
-    int page = 1;
-    final static String SOURCE_DRIBBBLE_SEARCH = "SOURCE_DRIBBBLE_SEARCH";
+    private DribbbleSearchService dribbbleSearchService;
+    private Context mContext;
+    private int page = 1;
 
     @Override
     public void resetNextPageIndexes() {
         page = 1;
     }
 
-    public SearchDataManager(Context context){
-        mContext = context;
+    protected SearchDataManager(){
         resetNextPageIndexes();
     }
 
@@ -60,8 +56,6 @@ public abstract class SearchDataManager extends BaseDataManager<List<Shot>> {
             public void onResponse(Call<List<Shot>> call, Response<List<Shot>> response) {
                 if (response.isSuccessful()) {
                     onDataLoaded(response.body());
-                } else {
-
                 }
                 loadFinished();
                 inflight.remove(call);
