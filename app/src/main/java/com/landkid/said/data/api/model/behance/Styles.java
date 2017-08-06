@@ -6,7 +6,7 @@ package com.landkid.said.data.api.model.behance;
 
 import java.util.Map;
 
-class Styles {
+public class Styles {
     public Map<String, String> background;
     public Map<String, Map<String, String>> text;
 }
