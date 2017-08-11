@@ -58,11 +58,17 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
     protected static final String KEY_SHOT = "KEY_SHOT";
 
     private List<SI> items;
+    private List<SaidItem> skeletonItems;
+
     private Context mContext;
 
     FeedAdapter(Context context) {
         this.items = new ArrayList<>();
         this.mContext = context;
+    }
+
+    public List<SI> getItems() {
+        return items;
     }
 
     public void setItems(List<SI> items){

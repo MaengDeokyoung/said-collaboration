@@ -82,24 +82,24 @@ public class DragDismissLayout extends FrameLayout {
 
                 if(!(Math.abs(getTranslationX()) > screenWidth / 4)){
                     animate()
-                            .translationX(0)
-                            .setDuration(300)
-                            .setListener(null)
-                            .setInterpolator(new LinearOutSlowInInterpolator())
-                            .start();
+                        .translationX(0)
+                        .setDuration(300)
+                        .setListener(null)
+                        .setInterpolator(new LinearOutSlowInInterpolator())
+                        .start();
                 } else {
                     animate()
-                            .translationX( - screenWidth)
-                            .setDuration(300)
-                            .setListener(new AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    if(mOnDragDismissListener != null)
-                                        mOnDragDismissListener.onDismiss();
-                                }
-                            })
-                            .setInterpolator(new LinearOutSlowInInterpolator())
-                            .start();
+                        .translationX( - screenWidth)
+                        .setDuration(300)
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                if(mOnDragDismissListener != null)
+                                    mOnDragDismissListener.onDismiss();
+                            }
+                        })
+                        .setInterpolator(new LinearOutSlowInInterpolator())
+                        .start();
                 }
 
                 break;

@@ -4,9 +4,9 @@ import android.content.Context;
 import android.support.annotation.StringDef;
 import android.support.v7.widget.RecyclerView;
 
-import com.landkid.said.data.api.behance.ProjectDataManager;
+import com.landkid.said.data.api.behance.BehanceDataManager;
 import com.landkid.said.data.api.dribbble.SearchDataManager;
-import com.landkid.said.data.api.dribbble.ShotDataManager;
+import com.landkid.said.data.api.dribbble.DribbbleDataManager;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.data.api.model.behance.Projects;
@@ -53,9 +53,9 @@ public abstract class Router {
     private String mPreviousQuerySearched = "";
 
 
-    private ShotDataManager shotDataManager;
+    private DribbbleDataManager dribbbleDataManager;
     private SearchDataManager searchDataManager;
-    private ProjectDataManager projectDataManager;
+    private BehanceDataManager behanceDataManager;
 
     private boolean isModeChanging = false;
 
@@ -70,13 +70,13 @@ public abstract class Router {
                 if (!isModeChanging) {
                     switch (mode) {
                         case MODE_POPULAR:
-                            shotDataManager.loadPopular();
+                            dribbbleDataManager.loadPopular();
                             break;
                         case MODE_SEARCH:
                             searchDataManager.search(mQuerySearched);
                             break;
                         case MODE_PROJECTS:
-                            projectDataManager.loadProject();
+                            behanceDataManager.loadProject();
                             break;
                     }
                 }
@@ -87,22 +87,20 @@ public abstract class Router {
     }
 
     private void resetDataManager(String mode){
-        this.mode = mode;
-        isModeChanging = true;
         loadStarted(mode);
 
         switch (mode) {
             case MODE_POPULAR:
-                shotDataManager.resetNextPageIndexes();
-                infiniteScrollListener.setDataManager(shotDataManager);
+                dribbbleDataManager.resetNextPageIndexes();
+                infiniteScrollListener.setDataManager(dribbbleDataManager);
                 break;
             case MODE_SEARCH:
                 searchDataManager.resetNextPageIndexes();
                 infiniteScrollListener.setDataManager(searchDataManager);
                 break;
             case MODE_PROJECTS:
-                projectDataManager.resetNextPageIndexes();
-                infiniteScrollListener.setDataManager(projectDataManager);
+                behanceDataManager.resetNextPageIndexes();
+                infiniteScrollListener.setDataManager(behanceDataManager);
                 break;
         }
     }
@@ -141,13 +139,40 @@ public abstract class Router {
                 SaidItem skeletonItem = SaidItem.getSkeletonInstance();
                 skeletonArray.add(skeletonItem);
             }
+
+            mFeedAdapter.addItems(skeletonArray);
         }
-        mFeedAdapter.addItems(skeletonArray);
     }
 
-    private void hideProgress(){
+    public void hideProgress(){
         if(skeletonArray != null) {
             mFeedAdapter.removeItems(skeletonArray);
+            skeletonArray = null;
+        }
+    }
+
+    public Router setMode(@Mode String mode){
+
+        isModeChanging = true;
+        this.mode = mode;
+        return this;
+    }
+
+    public void load(){
+
+        switch (mode) {
+            case MODE_POPULAR:
+                dribbbleDataManager.resetNextPageIndexes();
+                infiniteScrollListener.setDataManager(dribbbleDataManager);
+                break;
+            case MODE_SEARCH:
+                searchDataManager.resetNextPageIndexes();
+                infiniteScrollListener.setDataManager(searchDataManager);
+                break;
+            case MODE_PROJECTS:
+                behanceDataManager.resetNextPageIndexes();
+                infiniteScrollListener.setDataManager(behanceDataManager);
+                break;
         }
     }
 
@@ -156,8 +181,8 @@ public abstract class Router {
     public abstract void onDataLoaded(@Mode String mode, List<? extends SaidItem> data);
 
     public void loadPopular() {
-        if(shotDataManager == null) {
-            shotDataManager = new ShotDataManager(mContext) {
+        if(dribbbleDataManager == null) {
+            dribbbleDataManager = new DribbbleDataManager(mContext) {
 
                 @Override
                 public void onDataLoaded(List<Shot> items) {
@@ -170,7 +195,7 @@ public abstract class Router {
             };
         }
         resetDataManager(MODE_POPULAR);
-        shotDataManager.loadPopular();
+        dribbbleDataManager.loadPopular();
     }
 
     public void search(String keyword){
@@ -205,8 +230,8 @@ public abstract class Router {
     }
 
     public void loadProjects() {
-        if(projectDataManager == null) {
-            projectDataManager = new ProjectDataManager(mContext) {
+        if(behanceDataManager == null) {
+            behanceDataManager = new BehanceDataManager(mContext) {
 
                 @Override
                 public void onDataLoaded(Projects items) {
@@ -221,6 +246,6 @@ public abstract class Router {
             };
         }
         resetDataManager(MODE_PROJECTS);
-        projectDataManager.loadProject();
+        behanceDataManager.loadProject();
     }
 }

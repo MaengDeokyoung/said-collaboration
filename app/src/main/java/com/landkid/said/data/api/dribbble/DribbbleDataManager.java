@@ -17,11 +17,11 @@ import retrofit2.Response;
  * Created by landkid on 2017. 6. 3..
  */
 
-public abstract class ShotDataManager extends BaseDataManager<List<Shot>> {
+public abstract class DribbbleDataManager extends BaseDataManager<List<Shot>> {
 
     private DribbbleService dribbbleService;
 
-    protected ShotDataManager(Context context){
+    protected DribbbleDataManager(Context context){
         super();
         dribbbleService = DribbblePreferences.get(context).getApi();
         resetNextPageIndexes();

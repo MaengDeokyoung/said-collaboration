@@ -15,13 +15,13 @@ import retrofit2.Response;
  * Created by landkid on 2017. 7. 29..
  */
 
-public abstract class ProjectDataManager extends BaseDataManager<Projects> {
+public abstract class BehanceDataManager extends BaseDataManager<Projects> {
     Context mContext;
     BehanceService api;
     static final String SOURCE_DRIBBBLE_POPULAR = "SOURCE_DRIBBBLE_POPULAR";
 
 
-    public ProjectDataManager(Context context){
+    public BehanceDataManager(Context context){
         super();
         mContext = context;
         api = BehancePreferences.get(mContext).getApi();

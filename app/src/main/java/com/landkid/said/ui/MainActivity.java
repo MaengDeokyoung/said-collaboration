@@ -5,6 +5,11 @@ import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -37,6 +42,7 @@ import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.ui.widget.GooeyFloatingActionButton;
+import com.landkid.said.util.NetworkUtils;
 import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -59,6 +65,8 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
     @BindView(R.id.nav_view) NavigationView navView;
 
     private Router router;
+    private boolean isNetworkCallbackRegistered = false;
+
 
     static Handler transitionHandler;
 
@@ -141,23 +149,6 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
         super.attachBaseContext(TypekitContextWrapper.wrap(newBase));
 
-    }
-    List<Shot> skeletonArray;
-
-    void showProgress(int gravity){
-
-        if(skeletonArray == null) {
-            for (int i = 0; i < 2; i++) {
-                Shot shot = new Shot();
-                shot.isSkeletonItem = true;
-                skeletonArray = new ArrayList<>();
-            }
-
-        }
-
-        ((FrameLayout.LayoutParams) mPbLoading.getLayoutParams()).gravity = gravity;
-        mPbLoading.setVisibility(View.VISIBLE);
-        mPbLoading.requestLayout();
     }
 
     @Override
@@ -421,4 +412,53 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         drawer.closeDrawer(Gravity.END);
         return true;
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        checkNetworkConnectivity();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(isNetworkCallbackRegistered) {
+            final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+            isNetworkCallbackRegistered = false;
+        }
+    }
+
+    private void checkNetworkConnectivity(){
+
+        final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        boolean isConnected = activeNetworkInfo != null && activeNetworkInfo.isConnected();
+
+        if(!isConnected){
+            if(router != null){
+                router.hideProgress();
+            }
+
+            connectivityManager.registerNetworkCallback(new NetworkRequest
+                            .Builder()
+                            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                            .build(),
+                    networkCallback);
+            isNetworkCallbackRegistered = true;
+        }
+    }
+
+    private ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+
+        @Override
+        public void onAvailable(Network network) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    router.loadPopular();
+                }
+            });
+        }
+    };
 }
