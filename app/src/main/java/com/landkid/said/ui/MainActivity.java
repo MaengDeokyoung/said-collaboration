@@ -55,14 +55,15 @@ import butterknife.ButterKnife;
 
 public class MainActivity extends AppCompatActivity implements SearchFragment.OnSearchCompleteListener, NavigationView.OnNavigationItemSelectedListener{
 
-    @BindView(R.id.list) RecyclerView mRvFeeds;
+    public @BindView(R.id.list) RecyclerView mRvFeeds;
     @BindView(R.id.drawer_layout) DrawerLayout drawer;
     @BindView(R.id.pb_loading) ProgressBar mPbLoading;
     @BindView(R.id.bt_login) Button mBtLogin;
     @BindView(R.id.fab_search) GooeyFloatingActionButton mFabSearch;
     @BindView(R.id.toolbar) Toolbar toolbar;
-    @BindView(R.id.collapsing_bar_layout) CollapsingBarLayout mCollapsingBarLayout;
+    public @BindView(R.id.collapsing_bar_layout) CollapsingBarLayout mCollapsingBarLayout;
     @BindView(R.id.nav_view) NavigationView navView;
+    public @BindView(R.id.dim_layout) FrameLayout dimLayout;
 
     private Router router;
     private boolean isNetworkCallbackRegistered = false;

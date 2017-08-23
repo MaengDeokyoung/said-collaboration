@@ -79,4 +79,14 @@
         app:parentDrawable="@drawable/ic_search_vector">
 
     </com.landkid.said.ui.widget.GooeyFloatingActionButton>
+
+    <FrameLayout
+        android:visibility="gone"
+        android:id="@+id/dim_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="30dp"
+        android:background="#cc000000">
+
+    </FrameLayout>
 </FrameLayout>
