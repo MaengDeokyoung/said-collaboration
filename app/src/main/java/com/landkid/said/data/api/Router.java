@@ -27,8 +27,8 @@ public abstract class Router {
     public String mode = MODE_POPULAR;
 
     public static final String MODE_POPULAR = "MODE_POPULAR";
-    private static final String MODE_SEARCH = "MODE_SEARCH";
-    private static final String MODE_PROJECTS = "MODE_PROJECTS";
+    public static final String MODE_SEARCH = "MODE_SEARCH";
+    public static final String MODE_PROJECTS = "MODE_PROJECTS";
 
     private static final String POPULAR_SHOTS_HEADER = "Popular Shots";
     private static final String BEHANCE_PROJECTS_HEADER = "Behance Projects";
@@ -158,20 +158,22 @@ public abstract class Router {
         return this;
     }
 
+    public Router setSearchQuery(String keyword){
+        mQuerySearched = keyword;
+        return this;
+    }
+
     public void load(){
 
         switch (mode) {
             case MODE_POPULAR:
-                dribbbleDataManager.resetNextPageIndexes();
-                infiniteScrollListener.setDataManager(dribbbleDataManager);
+                loadPopular();
                 break;
             case MODE_SEARCH:
-                searchDataManager.resetNextPageIndexes();
-                infiniteScrollListener.setDataManager(searchDataManager);
+                search();
                 break;
             case MODE_PROJECTS:
-                behanceDataManager.resetNextPageIndexes();
-                infiniteScrollListener.setDataManager(behanceDataManager);
+                loadProjects();
                 break;
         }
     }
@@ -180,7 +182,7 @@ public abstract class Router {
 
     public abstract void onDataLoaded(@Mode String mode, List<? extends SaidItem> data);
 
-    public void loadPopular() {
+    private void loadPopular() {
         if(dribbbleDataManager == null) {
             dribbbleDataManager = new DribbbleDataManager(mContext) {
 
@@ -198,8 +200,7 @@ public abstract class Router {
         dribbbleDataManager.loadPopular();
     }
 
-    public void search(String keyword){
-        mQuerySearched = keyword;
+    private void search(){
         if(searchDataManager == null) {
             searchDataManager = new SearchDataManager() {
                 @Override
@@ -229,7 +230,7 @@ public abstract class Router {
         searchDataManager.search(mQuerySearched);
     }
 
-    public void loadProjects() {
+    private void loadProjects() {
         if(behanceDataManager == null) {
             behanceDataManager = new BehanceDataManager(mContext) {
 

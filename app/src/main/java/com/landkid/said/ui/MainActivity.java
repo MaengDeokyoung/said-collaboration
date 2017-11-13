@@ -31,7 +31,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
@@ -39,10 +38,8 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.Router;
 import com.landkid.said.data.api.dribbble.DribbblePreferences;
 import com.landkid.said.data.api.model.SaidItem;
-import com.landkid.said.data.api.model.dribbble.Shot;
 import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.ui.widget.GooeyFloatingActionButton;
-import com.landkid.said.util.NetworkUtils;
 import com.landkid.said.util.ViewUtils;
 import com.tsengvn.typekit.Typekit;
 import com.tsengvn.typekit.TypekitContextWrapper;
@@ -122,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
         switch (id){
             case android.R.id.home:
                 if(!router.mode.equals(Router.MODE_POPULAR)) {
-                    router.loadPopular();
+                    router.setMode(Router.MODE_POPULAR).load();
                 }
                 mRvFeeds.smoothScrollToPosition(0);
                 break;
@@ -131,10 +128,10 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                 break;
 
             case R.id.behance_projects:
-                router.loadProjects();
+                router.setMode(Router.MODE_PROJECTS).load();
                 break;
             case R.id.dribbble_popular:
-                router.loadPopular();
+                router.setMode(Router.MODE_POPULAR).load();
                 break;
             case R.id.action_login:
                 Intent login = new Intent(MainActivity.this, DribbbleLogin.class);
@@ -324,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
         mFragments = new ArrayList<>();
 
-        router.loadPopular();
+        router.setMode(Router.MODE_POPULAR).load();
 
         navView.setNavigationItemSelectedListener(this);
 
@@ -348,12 +345,12 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
         Context mContext;
         GooeyFloatingActionButton mFabSearch;
-        Router mRouter;
+        Router router;
 
         TransitionHandler(Context context, GooeyFloatingActionButton fabSearch, Router router){
             this.mContext = context;
             this.mFabSearch = fabSearch;
-            this.mRouter = router;
+            this.router = router;
         }
 
         @Override
@@ -390,7 +387,9 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
                     break;
                 case TO_SEARCH_RESULT:
                     data = msg.getData();
-                    mRouter.search(data.getString(SearchFragment.SEARCH_KEYWORD));
+                    router.setMode(Router.MODE_SEARCH)
+                            .setSearchQuery(data.getString(SearchFragment.SEARCH_KEYWORD))
+                            .load();
 
                     break;
             }
@@ -402,10 +401,10 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
 
         switch (item.getItemId()){
             case R.id.dribbble_popular:
-                router.loadPopular();
+                router.setMode(Router.MODE_POPULAR).load();
                 break;
             case R.id.behance_projects:
-                router.loadProjects();
+                router.setMode(Router.MODE_PROJECTS).load();
                 break;
         }
 
@@ -456,7 +455,7 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.On
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    router.loadPopular();
+                    router.load();
                 }
             });
         }
