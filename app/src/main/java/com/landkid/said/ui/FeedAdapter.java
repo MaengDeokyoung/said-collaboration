@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
@@ -14,10 +15,13 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -35,6 +39,8 @@ import com.landkid.said.R;
 import com.landkid.said.data.api.model.SaidItem;
 import com.landkid.said.data.api.model.behance.Project;
 import com.landkid.said.data.api.model.dribbble.Shot;
+import com.landkid.said.ui.widget.CanLongPressImageView;
+import com.landkid.said.ui.widget.CollapsingBarLayout;
 import com.landkid.said.util.HtmlUtils;
 import com.landkid.said.util.glide.FeedImageTarget;
 
@@ -61,6 +67,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
     private List<SaidItem> skeletonItems;
 
     private Context mContext;
+
 
     FeedAdapter(Context context) {
         this.items = new ArrayList<>();
@@ -99,9 +106,6 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
         super.onViewRecycled(feedViewHolder);
         if(feedViewHolder instanceof ItemViewHolder) {
             ((ItemViewHolder) feedViewHolder).isReady = false;
-            if(((ItemViewHolder) feedViewHolder).image != null) {
-
-            }
         }
         //holder.imageLoadingIndicator.setVisibility(View.VISIBLE);
     }
@@ -166,14 +170,16 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
             holder.username.setText(HtmlUtils.fromHtml(shot.user.name));
 
-            holder.image.setOnClickListener(new View.OnClickListener() {
+
+            holder.image.setClickable(true);
+            holder.image.setOnPressListener(new CanLongPressImageView.OnPressListener() {
 
                 private static final long MIN_CLICK_INTERVAL = 600;
 
                 private long mLastClickTime;
 
                 @Override
-                public void onClick(View v) {
+                public void onLongPress(MotionEvent event) {
 
                     long currentClickTime = SystemClock.uptimeMillis();
                     long elapsedTime = currentClickTime - mLastClickTime;
@@ -181,6 +187,63 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
                     if(elapsedTime <= MIN_CLICK_INTERVAL){
                         return;
+                    }
+
+
+                    final FrameLayout dimLayout = ((MainActivity)mContext).dimLayout;
+                    final RecyclerView rvFeeds = ((MainActivity)mContext).mRvFeeds;
+                    final CollapsingBarLayout toolbar = ((MainActivity)mContext).mCollapsingBarLayout;
+                    dimLayout.setVisibility(View.VISIBLE);
+                    holder.imageCard.removeView(holder.image);
+                    Log.d("FeedAdapter", "onLongClick: " + toolbar.getMeasuredHeight() + ", " + toolbar.getTranslationY());
+                    float top = holder.itemView.getTop() + holder.imageCard.getTop() + toolbar.getMeasuredHeight() + toolbar.getTranslationY();
+                    float left = holder.imageCard.getLeft();
+
+                    ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) holder.image.getLayoutParams();
+                    marginLayoutParams.topMargin = (int) top;
+                    marginLayoutParams.leftMargin = (int) left;
+                    marginLayoutParams.rightMargin = (int) left;
+
+                    dimLayout.addView(holder.image, marginLayoutParams);
+
+                    dimLayout.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            dimLayout.setVisibility(View.GONE);
+                            if(dimLayout.getChildCount() > 0) {
+                                dimLayout.removeView(holder.image);
+                                ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) holder.image.getLayoutParams();
+                                marginLayoutParams.topMargin = 0;
+                                marginLayoutParams.leftMargin = 0;
+                                marginLayoutParams.rightMargin = 0;
+                                holder.imageCard.addView(holder.image, marginLayoutParams);
+                            }
+                        }
+                    });
+
+//                    new Handler().postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            dimLayout.setVisibility(View.GONE);
+//                            dimLayout.removeView(holder.image);
+//                            ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) holder.image.getLayoutParams();
+//                            marginLayoutParams.topMargin = 0;
+//                            marginLayoutParams.leftMargin = 0;
+//                            marginLayoutParams.rightMargin = 0;
+//                            holder.imageCard.addView(holder.image, marginLayoutParams);
+//                        }
+//                    }, 3000);
+                }
+
+                @Override
+                public boolean onSingleTapUp(MotionEvent event) {
+
+                    long currentClickTime = SystemClock.uptimeMillis();
+                    long elapsedTime = currentClickTime - mLastClickTime;
+                    mLastClickTime = currentClickTime;
+
+                    if(elapsedTime <= MIN_CLICK_INTERVAL){
+                        return false;
                     }
 
                     if (holder.isReady) {
@@ -210,13 +273,100 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
                                 Message message = new Message();
                                 message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
                                 message.setData(bundle);
-                                ((MainActivity) mContext).transitionHandler.sendMessage(message);
+                                MainActivity.transitionHandler.sendMessage(message);
                             }
                         });
 
                     }
+
+                    return true;
                 }
             });
+
+//            holder.image.setOnLongClickListener(new View.OnLongClickListener() {
+//                @Override
+//                public boolean onLongClick(View view) {
+//                    final FrameLayout dimLayout = ((MainActivity)mContext).dimLayout;
+//                    final RecyclerView rvFeeds = ((MainActivity)mContext).mRvFeeds;
+//                    final Toolbar toolbar = ((MainActivity)mContext).toolbar;
+//                    dimLayout.setVisibility(View.VISIBLE);
+//                    holder.imageCard.removeView(holder.image);
+//                    Log.d("FeedAdapter", "onLongClick: " + toolbar.getMeasuredHeight() + ", " + rvFeeds.getTranslationY());
+//                    float top = holder.itemView.getTop() + holder.imageCard.getTop() + toolbar.getMeasuredHeight() - rvFeeds.getTranslationY();
+//                    float left = holder.imageCard.getLeft();
+//
+//                    ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) holder.image.getLayoutParams();
+//                    marginLayoutParams.topMargin = (int) top;
+//                    marginLayoutParams.leftMargin = (int) left;
+//
+//                    dimLayout.addView(holder.image, marginLayoutParams);
+//                    new Handler().postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            dimLayout.setVisibility(View.GONE);
+//                            dimLayout.removeView(holder.image);
+//                            ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) holder.image.getLayoutParams();
+//                            marginLayoutParams.topMargin = 0;
+//                            marginLayoutParams.leftMargin = 0;
+//                            marginLayoutParams.rightMargin = 0;
+//                            holder.imageCard.addView(holder.image, marginLayoutParams);
+//                        }
+//                    }, 3000);
+//                    return true;
+//                }
+//            });
+
+//            holder.image.setOnClickListener(new View.OnClickListener() {
+//
+//                private static final long MIN_CLICK_INTERVAL = 600;
+//
+//                private long mLastClickTime;
+//
+//                @Override
+//                public void onClick(View v) {
+//
+//                    long currentClickTime = SystemClock.uptimeMillis();
+//                    long elapsedTime = currentClickTime - mLastClickTime;
+//                    mLastClickTime = currentClickTime;
+//
+//                    if(elapsedTime <= MIN_CLICK_INTERVAL){
+//                        return;
+//                    }
+//
+//                    if (holder.isReady) {
+//                        Bitmap bitmap;
+//                        if(holder.image.getDrawable() instanceof GlideBitmapDrawable) {
+//                            bitmap = ((GlideBitmapDrawable) holder.image.getDrawable()).getBitmap();
+//                        } else {
+//                            bitmap = ((GifDrawable) holder.image.getDrawable()).getFirstFrame();
+//
+//                        }
+//
+//
+//                        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+//                            public void onGenerated(Palette p) {
+//                                int[] colors = {
+//                                        p.getVibrantColor(-1),
+//                                        p.getLightVibrantColor(-1),
+//                                        p.getDarkVibrantColor(-1),
+//                                        p.getMutedColor(-1),
+//                                        p.getLightMutedColor(-1),
+//                                        p.getDarkMutedColor(-1)};
+//
+//                                Bundle bundle = new Bundle();
+//                                bundle.putParcelable(FeedAdapter.KEY_SHOT, shot);
+//                                bundle.putIntArray(mContext.getString(R.string.swatch_colors_key), colors);
+//
+//                                Message message = new Message();
+//                                message.what = MainActivity.TO_DRIBBLE_SHOT_ACTIVITY;
+//                                message.setData(bundle);
+//                                MainActivity.transitionHandler.sendMessage(message);
+//                            }
+//                        });
+//
+//                    }
+//                }
+//            });
 
             Glide.with(holder.itemView.getContext())
                     .load(shot.images.best())
@@ -360,7 +510,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
     public static class ItemViewHolder extends FeedViewHolder {
 
         @BindView(R.id.tv_username) TextView username;
-        @BindView(R.id.iv_image) ImageView image;
+        @BindView(R.id.iv_image) CanLongPressImageView image;
         @BindView(R.id.tv_like_count) TextView likeCount;
         @BindView(R.id.tv_view_count) TextView viewCount;
         @BindView(R.id.ll_user_info_area) View userInfoArea;
@@ -384,7 +534,7 @@ public class FeedAdapter<SI extends SaidItem> extends RecyclerView.Adapter<FeedA
 
     }
 
-    static class SkeletonViewHolder extends FeedViewHolder {
+    private static class SkeletonViewHolder extends FeedViewHolder {
 
         SkeletonViewHolder(View itemView){
             super(itemView);
