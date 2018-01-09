@@ -105,6 +105,7 @@ public class DribbbleShotActivity extends AppCompatActivity implements View.OnCl
     private DribbblePreferences dribbblePreferences;
     private boolean performingLike = false;
 
+    @SuppressLint("HandlerLeak")
     final Handler colorHandler = new Handler(){
 
         @Override
