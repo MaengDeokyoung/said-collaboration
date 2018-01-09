@@ -280,7 +280,12 @@ public class GooeyFloatingActionButton extends FrameLayout {
 
                             expand(position + 1, parentOffset);
                         } else {
-                            mParentButton.setEnabled(true);
+                            mParentButton.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mParentButton.setEnabled(true);
+                                }
+                            },150);
                         }
                         if(position > 0){
                             GooeyDrawable postGooeyDrawable = (GooeyDrawable) mGooeyBackgrounds[position - 1].getDrawable();

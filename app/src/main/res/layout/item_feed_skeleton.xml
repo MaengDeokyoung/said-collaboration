@@ -74,17 +74,19 @@
                 android:orientation="horizontal"
                 android:layout_alignParentRight="true">
 
-                <ImageView
+                <android.support.v7.widget.CardView
                     android:layout_toRightOf="@+id/iv_like"
                     android:id="@+id/iv_share"
-                    android:layout_marginTop="10dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:layout_marginRight="15dp"
                     android:padding="5dp"
-                    android:src="@drawable/ic_share_vector"
-                    android:clickable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"/>
+                    app:cardBackgroundColor="#ebebeb"
+                    app:cardElevation="0dp"
+                    app:cardCornerRadius="15dp">
+
+                </android.support.v7.widget.CardView>
 
             </LinearLayout>
 
